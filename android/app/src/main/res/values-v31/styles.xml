@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme applied to the Android Window while the process is starting on Android 12+ (API 31+) -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <!-- Show a splash screen background matching colors.xml/colors-night.xml -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <!-- Specify the animated icon for the splash screen (dynamic tinted transparent logo) -->
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <!-- Specify the background color of the splash screen -->
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <!-- Specify the background of the icon container mask to match and hide the white border -->
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_background</item>
+    </style>
+    <!-- Theme applied to the Android Window as soon as the process has started -->
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Splash screen background — charcoal black to match logo background -->
+    <color name="splash_background">#15140F</color>
+    <!-- Splash screen icon tint — matching dark brand/charcoal text color -->
+    <color name="splash_icon_color">#16140F</color>
+</resources>

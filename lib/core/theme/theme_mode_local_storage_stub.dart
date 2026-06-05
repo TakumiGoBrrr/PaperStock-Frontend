@@ -1,0 +1,1 @@
+void writeThemeModeToLocalStorage(String value) {}
