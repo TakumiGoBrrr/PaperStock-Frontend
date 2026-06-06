@@ -21,7 +21,6 @@ class Post {
     required this.updatedAt,
     this.rejectedAt,
     this.canEditAfterRejection = false,
-    this.debugScoreInfo,
     this.parentId,
     this.nextPostId,
     this.firstPostId,
@@ -49,7 +48,6 @@ class Post {
   final DateTime updatedAt;
   final DateTime? rejectedAt;
   final bool canEditAfterRejection;
-  final String? debugScoreInfo;
   final String? parentId;
   final String? nextPostId;
   final String? firstPostId;
@@ -77,7 +75,6 @@ class Post {
     DateTime? updatedAt,
     DateTime? rejectedAt,
     bool? canEditAfterRejection,
-    String? debugScoreInfo,
     String? parentId,
     String? nextPostId,
     String? firstPostId,
@@ -105,7 +102,6 @@ class Post {
       updatedAt: updatedAt ?? this.updatedAt,
       rejectedAt: rejectedAt ?? this.rejectedAt,
       canEditAfterRejection: canEditAfterRejection ?? this.canEditAfterRejection,
-      debugScoreInfo: debugScoreInfo ?? this.debugScoreInfo,
       parentId: parentId ?? this.parentId,
       nextPostId: nextPostId ?? this.nextPostId,
       firstPostId: firstPostId ?? this.firstPostId,
@@ -148,7 +144,6 @@ class Post {
           ? DateTime.tryParse(json['rejected_at'].toString())
           : null,
       canEditAfterRejection: json['can_edit_after_rejection'] == true,
-      debugScoreInfo: json['debug_score_info']?.toString(),
       parentId: json['parent_id']?.toString(),
       nextPostId: json['next_post_id']?.toString(),
       firstPostId: json['first_post_id']?.toString(),
