@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../storage/nsfw_consent_store.dart';
 
-/// A blur overlay widget that requires 18+ age confirmation to view NSFW content.
+/// A blur overlay that hides sensitive content (mature themes) behind a content
+/// warning until the user chooses to reveal it. This is a viewing preference,
+/// not an age gate.
 class NsfwBlurOverlay extends StatefulWidget {
   const NsfwBlurOverlay({
     super.key,
@@ -54,23 +56,22 @@ class _NsfwBlurOverlayState extends State<NsfwBlurOverlay> {
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.orange),
             SizedBox(width: 12),
-            Flexible(child: Text('NSFW Content Warning')),
+            Flexible(child: Text('Sensitive content')),
           ],
         ),
         content: const Text(
-          'This post contains content that is Not Safe For Work (NSFW). '
-          'It may include mature themes, explicit material, or sensitive content.\n\n'
-          'You must be 18 years or older to view this content.\n\n'
-          'Are you 18 years or older?',
+          'This story is marked as sensitive. It may contain mature themes such '
+          'as graphic violence, distressing topics, or strong language.\n\n'
+          'Do you want to reveal sensitive content?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('No'),
+            child: const Text('Not now'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Yes, I\'m 18+'),
+            child: const Text('Reveal'),
           ),
         ],
       ),
@@ -143,7 +144,7 @@ class _NsfwBlurOverlayState extends State<NsfwBlurOverlay> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'NSFW Content',
+                          'Sensitive Content',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -153,7 +154,7 @@ class _NsfwBlurOverlayState extends State<NsfwBlurOverlay> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
-                            'This content may not be suitable for all audiences',
+                            'This story may contain mature themes',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: Colors.white70,
                                 ),
@@ -168,7 +169,7 @@ class _NsfwBlurOverlayState extends State<NsfwBlurOverlay> {
                             child: FilledButton.icon(
                               onPressed: _showConfirmationDialog,
                               icon: const Icon(Icons.remove_red_eye),
-                              label: const Text('View Content (18+)'),
+                              label: const Text('Reveal'),
                               style: FilledButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 20,

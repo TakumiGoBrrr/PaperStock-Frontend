@@ -607,7 +607,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                         ),
                       ],
                       const SizedBox(height: 16),
-                      // NSFW Checkbox
+                      // Sensitive content Checkbox
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
@@ -628,7 +628,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Not Safe For Work (NSFW)',
+                                'Mark as sensitive content',
                                 style: TextStyle(
                                   color: colorScheme.onSurface,
                                   fontWeight: FontWeight.w600,
@@ -641,14 +641,14 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                                 size: 20,
                                 color: colorScheme.onSurfaceVariant,
                               ),
-                              tooltip: 'NSFW content includes mature themes, violence, or explicit material. Posts marked as NSFW will be blurred and require age confirmation to view.',
+                              tooltip: 'Sensitive content covers mature themes such as graphic violence, disturbing or distressing topics, or strong language. It is shown with a blur and a content warning. Sexually explicit content is not allowed.',
                               onPressed: () {
                                 showDialog(
                                   context: context,
                                   builder: (context) => AlertDialog(
-                                    title: const Text('About NSFW'),
+                                    title: const Text('About sensitive content'),
                                     content: const Text(
-                                      'NSFW (Not Safe For Work) content includes mature themes, violence, explicit material, or content that may not be appropriate for all audiences.\n\nPosts marked as NSFW will be shown with a blur overlay and require users to confirm they are 18+ before viewing.',
+                                      'Mark your story as sensitive if it contains mature themes such as graphic violence, disturbing or distressing topics, or strong language.\n\nSensitive stories are shown with a blur and a content warning, so readers can choose whether to reveal them.\n\nSexually explicit content is not permitted on PaperStock and will be removed by moderators.',
                                     ),
                                     actions: [
                                       TextButton(

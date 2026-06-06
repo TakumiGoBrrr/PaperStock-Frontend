@@ -356,8 +356,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 decoration: InputDecoration(
                                   labelText: 'Date of birth',
                                   helperText:
-                                      'You must be at least $_minimumSignupAge to join. '
-                                      '18+ to see mature content.',
+                                      'You must be at least $_minimumSignupAge years old to join.',
                                   prefixIcon: const Icon(Icons.cake_outlined),
                                 ),
                                 child: Text(
