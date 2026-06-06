@@ -474,6 +474,7 @@ class _StoryCard extends ConsumerWidget {
 
     return NsfwBlurOverlay(
       isNsfw: post.isNsfw,
+      borderRadius: BorderRadius.circular(_kCardBorderRadius),
       child: Container(
         width: double.infinity,
         height: double.infinity,

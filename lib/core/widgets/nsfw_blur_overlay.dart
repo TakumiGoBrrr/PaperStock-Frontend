@@ -10,10 +10,16 @@ class NsfwBlurOverlay extends StatefulWidget {
     super.key,
     required this.child,
     required this.isNsfw,
+    this.borderRadius,
   });
 
   final Widget child;
   final bool isNsfw;
+
+  /// Optional rounded-corner radius used to clip the blur + overlay so it stays
+  /// contained within the child's shape (e.g. a swipe card) instead of bleeding
+  /// across the whole screen.
+  final BorderRadius? borderRadius;
 
   @override
   State<NsfwBlurOverlay> createState() => _NsfwBlurOverlayState();
@@ -89,18 +95,20 @@ class _NsfwBlurOverlayState extends State<NsfwBlurOverlay> {
 
     // If loading, show loading indicator with blur
     if (_isLoading) {
-      return Stack(
-        children: [
-          ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: widget.child,
-          ),
-          const Positioned.fill(
-            child: Center(
-              child: CircularProgressIndicator(),
+      return _clip(
+        Stack(
+          children: [
+            ImageFiltered(
+              imageFilter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: widget.child,
             ),
-          ),
-        ],
+            const Positioned.fill(
+              child: Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          ],
+        ),
       );
     }
 
@@ -110,73 +118,87 @@ class _NsfwBlurOverlayState extends State<NsfwBlurOverlay> {
     }
 
     // Show blurred content with confirmation button
-    return Stack(
-      children: [
-        ImageFiltered(
-          imageFilter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: widget.child,
-        ),
-        Positioned.fill(
-          child: Container(
-            color: Colors.black.withValues(alpha: 0.5),
-            child: Center(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.warning_amber_rounded,
-                        size: 48,
-                        color: Colors.orange,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'NSFW Content',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'This content may not be suitable for all audiences',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.white70,
-                              ),
-                          textAlign: TextAlign.center,
+    return _clip(
+      Stack(
+        children: [
+          ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: widget.child,
+          ),
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withValues(alpha: 0.5),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          size: 48,
+                          color: Colors.orange,
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed: _showConfirmationDialog,
-                            icon: const Icon(Icons.remove_red_eye),
-                            label: const Text('View Content (18+)'),
-                            style: FilledButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
+                        const SizedBox(height: 16),
+                        Text(
+                          'NSFW Content',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'This content may not be suitable for all audiences',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Colors.white70,
+                                ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: _showConfirmationDialog,
+                              icon: const Icon(Icons.remove_red_eye),
+                              label: const Text('View Content (18+)'),
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  /// Clips the blurred content to [widget.borderRadius] when provided so the
+  /// blur stays inside the card bounds instead of spilling onto the page.
+  Widget _clip(Widget child) {
+    if (widget.borderRadius == null) {
+      return child;
+    }
+    return ClipRRect(
+      borderRadius: widget.borderRadius!,
+      child: child,
     );
   }
 }
