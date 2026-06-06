@@ -126,14 +126,21 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   if (n.type == 'moderation_deleted') {
                     showDialog<void>(
                       context: context,
-                      builder: (context) => AlertDialog(
+                      builder: (dialogContext) => AlertDialog(
                         title: const Text('Post Deleted'),
                         content: Text(
                           'Your post "${n.postTitle ?? 'Untitled'}" was deleted by a moderator.\n\nReason: ${n.postModerationNote ?? 'No reason provided.'}',
                         ),
                         actions: <Widget>[
                           TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
+                            onPressed: () {
+                              Navigator.of(dialogContext).pop();
+                              context.push('/community-guidelines');
+                            },
+                            child: const Text('Review Guidelines'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(dialogContext).pop(),
                             child: const Text('OK'),
                           ),
                         ],

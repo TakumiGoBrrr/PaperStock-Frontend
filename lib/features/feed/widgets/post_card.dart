@@ -149,37 +149,53 @@ class _PostCardState extends ConsumerState<PostCard> {
                         const SizedBox(height: 4),
                       ],
                       if (post.moderationStatus != 'approved') ...<Widget>[
-                        Row(
-                          children: <Widget>[
-                            Icon(
-                              post.moderationStatus == 'pending'
-                                  ? Icons.hourglass_empty
-                                  : Icons.error_outline,
-                              size: 12,
-                              color: post.moderationStatus == 'pending'
-                                  ? Colors.amber[800]
-                                  : (post.canEditAfterRejection 
-                                      ? Colors.orange[800] 
-                                      : Colors.red[800]),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              post.moderationStatus == 'pending'
-                                  ? 'Pending Moderation'
-                                  : (post.canEditAfterRejection 
-                                      ? 'Rejected' 
-                                      : 'Rejection with Deletion'),
-                              style: theme.textTheme.labelSmall?.copyWith(
+                        InkWell(
+                          onTap: post.moderationStatus == 'rejected'
+                              ? () => context.push('/community-guidelines')
+                              : null,
+                          borderRadius: BorderRadius.circular(6),
+                          child: Row(
+                            children: <Widget>[
+                              Icon(
+                                post.moderationStatus == 'pending'
+                                    ? Icons.hourglass_empty
+                                    : Icons.error_outline,
+                                size: 12,
                                 color: post.moderationStatus == 'pending'
                                     ? Colors.amber[800]
-                                    : (post.canEditAfterRejection 
-                                        ? Colors.orange[900] 
-                                        : Colors.red[900]),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
+                                    : (post.canEditAfterRejection
+                                        ? Colors.orange[800]
+                                        : Colors.red[800]),
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 4),
+                              Text(
+                                post.moderationStatus == 'pending'
+                                    ? 'Pending Moderation'
+                                    : (post.canEditAfterRejection
+                                        ? 'Rejected'
+                                        : 'Rejection with Deletion'),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: post.moderationStatus == 'pending'
+                                      ? Colors.amber[800]
+                                      : (post.canEditAfterRejection
+                                          ? Colors.orange[900]
+                                          : Colors.red[900]),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              if (post.moderationStatus == 'rejected') ...<Widget>[
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.chevron_right,
+                                  size: 14,
+                                  color: post.canEditAfterRejection
+                                      ? Colors.orange[900]
+                                      : Colors.red[900],
+                                ),
+                              ],
+                            ],
+                          ),
                         ),
                         if (post.moderationStatus == 'rejected' &&
                             post.moderationNote != null &&
@@ -212,6 +228,31 @@ class _PostCardState extends ConsumerState<PostCard> {
                                     canEdit: post.canEditAfterRejection,
                                   ),
                                 ],
+                                const SizedBox(height: 8),
+                                InkWell(
+                                  onTap: () => context
+                                      .push('/community-guidelines'),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Icon(
+                                        Icons.menu_book_outlined,
+                                        size: 13,
+                                        color: Colors.orange[900],
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Review Community Guidelines',
+                                        style:
+                                            theme.textTheme.bodySmall?.copyWith(
+                                          color: Colors.orange[900],
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
                           ),

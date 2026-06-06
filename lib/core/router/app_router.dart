@@ -16,6 +16,7 @@ import '../../features/feed/create_post_screen.dart';
 import '../../features/feed/models/post.dart';
 import '../../features/feed/feed_screen.dart';
 import '../../features/feed/post_detail_screen.dart';
+import '../../features/legal/community_guidelines_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
 import '../../features/profile/edit_profile_screen.dart';
 import '../../features/profile/history_screen.dart';
@@ -165,6 +166,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return _fadeScalePage(
             state: state,
             child: const SwipeDemoScreen(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/community-guidelines',
+        pageBuilder: (BuildContext context, GoRouterState state) {
+          final isOnboarding =
+              state.uri.queryParameters['onboarding'] == 'true';
+          return _fadeScalePage(
+            state: state,
+            child: CommunityGuidelinesScreen(isOnboarding: isOnboarding),
           );
         },
       ),

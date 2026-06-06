@@ -560,7 +560,7 @@ class _SwipeDemoScreenState extends State<SwipeDemoScreen> with SingleTickerProv
           ),
           const SizedBox(height: 48),
           FilledButton(
-            onPressed: () => context.go('/feed'),
+            onPressed: () => context.go('/community-guidelines?onboarding=true'),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
