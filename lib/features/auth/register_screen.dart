@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/api/api_config.dart';
 import '../../core/widgets/app_header.dart';
 import 'controller/auth_controller.dart';
 import 'data/auth_repository.dart';
@@ -33,6 +35,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _showPassword = false;
   String? _displayNameServerError;
 
+  // Play Store compliance: explicit consent + age gate.
+  bool _agreedToPrivacy = false;
+  DateTime? _dateOfBirth;
+
+  static const int _minimumSignupAge = 13;
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +64,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (form == null) return;
     if (!form.validate()) return;
 
+    if (_dateOfBirth == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter your date of birth to continue.'),
+        ),
+      );
+      return;
+    }
+
+    if (_ageInYears(_dateOfBirth!) < _minimumSignupAge) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'You must be at least $_minimumSignupAge years old to use PaperStock.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (!_agreedToPrivacy) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please agree to the Privacy Policy to continue.'),
+        ),
+      );
+      return;
+    }
+
     FocusScope.of(context).unfocus();
 
     setState(() => _isContinuingToOtp = true);
@@ -69,6 +106,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             email: email,
             password: password,
             displayName: displayName,
+            dateOfBirth: _formatDob(_dateOfBirth!),
           );
 
       final args = OtpArgs(email: email, isRegisterFlow: true);
@@ -107,6 +145,57 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (mounted) setState(() => _isContinuingToOtp = false);
     }
 
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    final uri = Uri.parse(ApiConfig.privacyPolicyUrl);
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open the Privacy Policy.')),
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the Privacy Policy.')),
+      );
+    }
+  }
+
+  static int _ageInYears(DateTime dob) {
+    final now = DateTime.now();
+    var age = now.year - dob.year;
+    if (now.month < dob.month ||
+        (now.month == dob.month && now.day < dob.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  static String _formatDob(DateTime d) {
+    final y = d.year.toString().padLeft(4, '0');
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '$y-$m-$day';
+  }
+
+  Future<void> _pickDateOfBirth() async {
+    FocusScope.of(context).unfocus();
+    final now = DateTime.now();
+    // Default the picker to a plausible adult birth year.
+    final initial = _dateOfBirth ?? DateTime(now.year - 18, now.month, now.day);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1900),
+      lastDate: now,
+      helpText: 'Select your date of birth',
+    );
+    if (picked != null) {
+      setState(() => _dateOfBirth = picked);
+    }
   }
 
   @override
@@ -260,8 +349,67 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               },
                             ),
                             const SizedBox(height: 22),
+                            InkWell(
+                              onTap: _pickDateOfBirth,
+                              borderRadius: BorderRadius.circular(8),
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  labelText: 'Date of birth',
+                                  helperText:
+                                      'You must be at least $_minimumSignupAge to join. '
+                                      '18+ to see mature content.',
+                                  prefixIcon: const Icon(Icons.cake_outlined),
+                                ),
+                                child: Text(
+                                  _dateOfBirth == null
+                                      ? 'Select your date of birth'
+                                      : _formatDob(_dateOfBirth!),
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: _dateOfBirth == null
+                                        ? colorScheme.onSurfaceVariant
+                                        : colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            _ConsentCheckbox(
+                              value: _agreedToPrivacy,
+                              onChanged: (v) =>
+                                  setState(() => _agreedToPrivacy = v ?? false),
+                              child: Text.rich(
+                                TextSpan(
+                                  style: theme.textTheme.bodyMedium,
+                                  children: <InlineSpan>[
+                                    const TextSpan(
+                                        text: 'I have read and agree to the '),
+                                    WidgetSpan(
+                                      alignment: PlaceholderAlignment.middle,
+                                      child: GestureDetector(
+                                        onTap: _openPrivacyPolicy,
+                                        child: Text(
+                                          'Privacy Policy',
+                                          style:
+                                              theme.textTheme.bodyMedium?.copyWith(
+                                            color: colorScheme.primary,
+                                            fontWeight: FontWeight.w600,
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const TextSpan(text: '.'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
                             FilledButton(
-                              onPressed: _isContinuingToOtp ? null : _submit,
+                              onPressed: (_isContinuingToOtp ||
+                                      _dateOfBirth == null ||
+                                      !_agreedToPrivacy)
+                                  ? null
+                                  : _submit,
                               child: _isContinuingToOtp
                                   ? const SizedBox(
                                       height: 20,
@@ -297,6 +445,47 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
 bool _isValidEmail(String input) {
   return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(input);
+}
+
+class _ConsentCheckbox extends StatelessWidget {
+  const _ConsentCheckbox({
+    required this.value,
+    required this.onChanged,
+    required this.child,
+  });
+
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => onChanged(!value),
+      borderRadius: BorderRadius.circular(8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          SizedBox(
+            height: 24,
+            width: 24,
+            child: Checkbox(
+              value: value,
+              onChanged: onChanged,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: child,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 void _showTimeoutBanner(BuildContext context, String message) {

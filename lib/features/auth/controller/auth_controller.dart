@@ -78,12 +78,14 @@ class AuthController extends AsyncNotifier<AuthState> {
     required String email,
     required String password,
     required String displayName,
+    required String dateOfBirth,
   }) async {
     final repo = ref.read(authRepositoryProvider);
     await repo.requestRegisterOtp(
       email: email,
       password: password,
       displayName: displayName,
+      dateOfBirth: dateOfBirth,
     );
   }
 

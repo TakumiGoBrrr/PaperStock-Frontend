@@ -67,6 +67,7 @@ class AuthRepository {
     required String email,
     required String password,
     required String displayName,
+    required String dateOfBirth,
   }) async {
     final trimmedEmail = email.trim();
     final trimmedDisplayName = displayName.trim();
@@ -75,6 +76,7 @@ class AuthRepository {
       'email': trimmedEmail,
       'password': password,
       'display_name': trimmedDisplayName,
+      'date_of_birth': dateOfBirth,
     };
 
     _debugLogRequest('POST', '/api/v1/auth/register', body);
