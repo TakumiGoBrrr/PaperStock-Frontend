@@ -444,9 +444,6 @@ class _SwipeBodyState extends ConsumerState<_SwipeBody>
 
 // ─── Story Card ───────────────────────────────────────────────────────────────
 
-// Global debug engine visibility provider
-final showSwipeDebugProvider = StateProvider<bool>((ref) => false);
-
 class _StoryCard extends ConsumerWidget {
   const _StoryCard({required this.post});
   final Post post;
@@ -465,12 +462,6 @@ class _StoryCard extends ConsumerWidget {
     final cardSub = isDark ? cardCharcoalSubtext : cardCreamSubtext;
     final cardAccent = isDark ? cardCharcoalAccent : cardCreamAccent;
     final cardMid = isDark ? cardCharcoalMid : cardCreamMid;
-
-    final showDebug = ref.watch(showSwipeDebugProvider);
-    final deckState = ref.watch(swipeDeckControllerProvider).valueOrNull;
-    final deck = deckState?.deck ?? [];
-    final isTopCard = deck.isNotEmpty && deck[0].id == post.id;
-    final nextCard = deck.length > 1 ? deck[1] : null;
 
     return NsfwBlurOverlay(
       isNsfw: post.isNsfw,
@@ -591,21 +582,6 @@ class _StoryCard extends ConsumerWidget {
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     icon: Icon(
-                      Icons.bug_report_outlined,
-                      size: 16,
-                      color:
-                          showDebug ? cardAccent : cardSub.withValues(alpha: 0.5),
-                    ),
-                    onPressed: () => ref
-                        .read(showSwipeDebugProvider.notifier)
-                        .update((v) => !v),
-                    tooltip: 'Calculations Engine',
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: Icon(
                       Icons.flag_outlined,
                       size: 16,
                       color: cardSub.withValues(alpha: 0.5),
@@ -701,113 +677,22 @@ class _StoryCard extends ConsumerWidget {
 
           const SizedBox(height: 14),
 
-          if (showDebug) ...<Widget>[
-            const SizedBox(height: 8),
-            Expanded(
-              child: ListView(
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent.withValues(alpha: 0.08),
-                      border: Border.all(
-                        color: Colors.redAccent.withValues(alpha: 0.25),
-                        width: 0.8,
-                      ),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(
-                          children: [
-                            const Icon(Icons.bug_report,
-                                size: 14, color: Colors.redAccent),
-                            const SizedBox(width: 6),
-                            Text(
-                              'PAPERSTOCK RECS ENGINE',
-                              style: GoogleFonts.inter(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.redAccent,
-                                letterSpacing: 1.1,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          post.debugScoreInfo ??
-                              'No score metadata (self-authored post or loading)',
-                          style: GoogleFonts.jetBrainsMono(
-                            fontSize: 10.5,
-                            height: 1.45,
-                            color: cardText,
-                          ),
-                        ),
-                        if (isTopCard && nextCard != null) ...[
-                          const SizedBox(height: 10),
-                          Divider(
-                            color: Colors.redAccent.withValues(alpha: 0.2),
-                            height: 1,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'UPCOMING POST (Next Stack):',
-                            style: GoogleFonts.inter(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.redAccent.withValues(alpha: 0.85),
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Title: "${nextCard.title}"',
-                            style: GoogleFonts.inter(
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w600,
-                              color: cardText,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            nextCard.debugScoreInfo ?? 'No score metadata',
-                            style: GoogleFonts.jetBrainsMono(
-                              fontSize: 10.5,
-                              height: 1.4,
-                              color: cardSub,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+          // ── Body preview (scrolls within card) ───────────────────────────
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                post.body,
+                style: GoogleFonts.inter(
+                  textStyle: theme.textTheme.bodyLarge?.copyWith(
+                    height: 1.65,
+                    color: cardSub,
                   ),
-                ],
-              ),
-            ),
-          ] else ...<Widget>[
-            // ── Body preview (scrolls within card) ───────────────────────────
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  post.body,
-                  style: GoogleFonts.inter(
-                    textStyle: theme.textTheme.bodyLarge?.copyWith(
-                      height: 1.65,
-                      color: cardSub,
-                    ),
-                  ),
-                  overflow: TextOverflow.fade,
                 ),
+                overflow: TextOverflow.fade,
               ),
             ),
-          ],
+          ),
 
           // ── Tags ─────────────────────────────────────────────────────────
           if (!post.isAd && post.tags.isNotEmpty) ...<Widget>[
