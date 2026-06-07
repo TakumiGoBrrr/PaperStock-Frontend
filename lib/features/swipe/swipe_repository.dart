@@ -85,6 +85,7 @@ class SwipeRepository {
                 isAd: true,
                 adImageUrl: null,
                 adTargetUrl: json['target_url']?.toString(),
+                adType: (json['ad_type'] ?? 'banner').toString(),
               ))
           .toList(growable: false);
     } catch (_) {

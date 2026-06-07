@@ -28,6 +28,7 @@ class Post {
     this.isAd = false,
     this.adImageUrl,
     this.adTargetUrl,
+    this.adType = 'banner',
   });
 
   final String id;
@@ -56,6 +57,9 @@ class Post {
   final String? adImageUrl;
   final String? adTargetUrl;
 
+  /// "banner" (short promo card) or "story" (full-story ad with a link).
+  final String adType;
+
   Post copyWith({
     String? id,
     String? authorId,
@@ -82,6 +86,7 @@ class Post {
     bool? isAd,
     String? adImageUrl,
     String? adTargetUrl,
+    String? adType,
   }) {
     return Post(
       id: id ?? this.id,
@@ -109,6 +114,7 @@ class Post {
       isAd: isAd ?? this.isAd,
       adImageUrl: adImageUrl ?? this.adImageUrl,
       adTargetUrl: adTargetUrl ?? this.adTargetUrl,
+      adType: adType ?? this.adType,
     );
   }
 

@@ -24,6 +24,7 @@ import '../../features/profile/interests_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/profile/recycle_bin_screen.dart';
 import '../../features/swipe/swipe_demo_screen.dart';
+import '../../features/swipe/story_ad_screen.dart';
 import '../../features/profile/settings_screen.dart';
 import '../../features/search/tag_search_results_screen.dart';
 
@@ -177,6 +178,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return _fadeScalePage(
             state: state,
             child: CommunityGuidelinesScreen(isOnboarding: isOnboarding),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/sponsored-story',
+        pageBuilder: (BuildContext context, GoRouterState state) {
+          final extra = state.extra;
+          if (extra is! StoryAdArgs) {
+            return _fadeScalePage(state: state, child: const FeedScreen());
+          }
+          return _fadeScalePage(
+            state: state,
+            child: StoryAdScreen(args: extra),
           );
         },
       ),

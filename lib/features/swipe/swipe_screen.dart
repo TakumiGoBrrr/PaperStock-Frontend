@@ -10,6 +10,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/card_brightness_provider.dart';
 import '../../core/widgets/nsfw_blur_overlay.dart';
 import '../feed/models/post.dart';
+import 'story_ad_screen.dart';
 import 'swipe_controller.dart';
 
 // ─── Thresholds ───────────────────────────────────────────────────────────────
@@ -362,14 +363,7 @@ class _SwipeBodyState extends ConsumerState<_SwipeBody>
           ? null
           : () async {
               if (topCard.isAd) {
-                if (topCard.adTargetUrl != null) {
-                  final realAdId = topCard.id.split('_').first;
-                  ref.read(swipeRepositoryProvider).recordAdClick(realAdId);
-                  try {
-                    final uri = Uri.parse(topCard.adTargetUrl!);
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  } catch (_) {}
-                }
+                _openAd(context, ref, topCard);
               } else {
                 context.push(
                   '/post/${topCard.id}',
@@ -444,6 +438,43 @@ class _SwipeBodyState extends ConsumerState<_SwipeBody>
 
 // ─── Story Card ───────────────────────────────────────────────────────────────
 
+/// Opens an ad based on its type:
+///  - "story"  → an in-app reader showing the full story with a "Learn more" CTA
+///  - "banner" → opens the target URL directly (also records a click)
+/// In both cases an impression is recorded.
+void _openAd(BuildContext context, WidgetRef ref, Post ad) {
+  final realAdId = ad.id.split('_').first;
+  final repo = ref.read(swipeRepositoryProvider);
+  repo.recordAdImpression(realAdId);
+
+  if (ad.adType == 'story') {
+    context.push(
+      '/sponsored-story',
+      extra: StoryAdArgs(
+        adId: realAdId,
+        title: ad.title,
+        body: ad.body,
+        targetUrl: ad.adTargetUrl,
+        onLearnMore: (id) => repo.recordAdClick(id),
+      ),
+    );
+    return;
+  }
+
+  // Banner ad: open the link directly.
+  if (ad.adTargetUrl != null && ad.adTargetUrl!.isNotEmpty) {
+    repo.recordAdClick(realAdId);
+    () async {
+      try {
+        await launchUrl(
+          Uri.parse(ad.adTargetUrl!),
+          mode: LaunchMode.externalApplication,
+        );
+      } catch (_) {}
+    }();
+  }
+}
+
 class _StoryCard extends ConsumerWidget {
   const _StoryCard({required this.post});
   final Post post;
@@ -494,16 +525,7 @@ class _StoryCard extends ConsumerWidget {
                   child: GestureDetector(
                     behavior: HitTestBehavior.translucent,
                     onTap: post.isAd
-                        ? () async {
-                            if (post.adTargetUrl != null) {
-                              final realAdId = post.id.split('_').first;
-                              ref.read(swipeRepositoryProvider).recordAdClick(realAdId);
-                              try {
-                                final uri = Uri.parse(post.adTargetUrl!);
-                                await launchUrl(uri, mode: LaunchMode.externalApplication);
-                              } catch (_) {}
-                            }
-                          }
+                        ? () => _openAd(context, ref, post)
                         : () {
                             if (post.authorId.trim().isNotEmpty) {
                               context.push('/profile/${post.authorId}');
@@ -722,14 +744,20 @@ class _StoryCard extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
                 Icon(
-                  post.isAd ? Icons.open_in_new_rounded : Icons.touch_app_outlined,
+                  post.isAd
+                      ? (post.adType == 'story'
+                          ? Icons.menu_book_outlined
+                          : Icons.open_in_new_rounded)
+                      : Icons.touch_app_outlined,
                   size: 13,
                   color: cardSub.withValues(alpha: 0.5),
                 ),
                 const SizedBox(width: 5),
                 Text(
                   post.isAd
-                      ? 'Tap or swipe up to open website'
+                      ? (post.adType == 'story'
+                          ? 'Tap to read · swipe up to open link'
+                          : 'Tap or swipe up to open website')
                       : 'Tap to read full story',
                   style: GoogleFonts.inter(
                     textStyle: theme.textTheme.labelSmall?.copyWith(
