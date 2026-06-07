@@ -139,8 +139,8 @@ class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
       // Since they swiped it, they viewed it (Impression)
       repo.recordAdImpression(realAdId);
 
-      if ((direction == 'right' || direction == 'up') && swiped.adTargetUrl != null) {
-        // Swipe right or up acts as a click redirect
+      if (direction == 'up' && swiped.adTargetUrl != null) {
+        // Swipe up acts as "Learn More" — a click redirect.
         repo.recordAdClick(realAdId);
         try {
           final uri = Uri.parse(swiped.adTargetUrl!);

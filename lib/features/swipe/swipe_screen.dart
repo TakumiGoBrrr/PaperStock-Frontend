@@ -728,7 +728,9 @@ class _StoryCard extends ConsumerWidget {
                 ),
                 const SizedBox(width: 5),
                 Text(
-                  post.isAd ? 'Tap to open website' : 'Tap to read full story',
+                  post.isAd
+                      ? 'Tap or swipe up to open website'
+                      : 'Tap to read full story',
                   style: GoogleFonts.inter(
                     textStyle: theme.textTheme.labelSmall?.copyWith(
                       color: cardSub.withValues(alpha: 0.55),
@@ -816,8 +818,8 @@ class _DragLabel extends StatelessWidget {
       text = isAd ? 'LEARN MORE' : 'BOOKMARK';
       align = Alignment.bottomCenter;
     } else if (dir == _DragDir.right) {
-      icon = isAd ? Icons.open_in_new_rounded : Icons.favorite_rounded;
-      text = isAd ? 'LEARN MORE' : 'LIKE';
+      icon = isAd ? Icons.close_rounded : Icons.favorite_rounded;
+      text = isAd ? 'SKIP' : 'LIKE';
       align = Alignment.centerLeft;
     } else {
       icon = Icons.close_rounded;
