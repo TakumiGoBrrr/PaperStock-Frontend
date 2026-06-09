@@ -562,62 +562,98 @@ class _BookmarksTabState extends ConsumerState<_BookmarksTab> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    // ── Loading ──────────────────────────────────────────────────────────────
+    // All branches return a CustomScrollView with the dedicated scroll
+    // controller so they always respect the outer NestedScrollView header and
+    // their tops start below the pinned app bar instead of at the screen origin.
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Icon(Icons.error_outline, size: 40, color: colorScheme.error),
-              const SizedBox(height: 12),
-              Text(_error!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              FilledButton.tonal(
-                onPressed: () => _load(refresh: true),
-                child: const Text('Retry'),
-              ),
-            ],
+      return CustomScrollView(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: <Widget>[
+          const SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(child: CircularProgressIndicator()),
           ),
-        ),
+        ],
       );
     }
 
+    // ── Error ────────────────────────────────────────────────────────────────
+    if (_error != null) {
+      return CustomScrollView(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: <Widget>[
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Icon(Icons.error_outline,
+                        size: 40, color: colorScheme.error),
+                    const SizedBox(height: 12),
+                    Text(_error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    FilledButton.tonal(
+                      onPressed: () => _load(refresh: true),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    // ── Empty ────────────────────────────────────────────────────────────────
     if (_items.isEmpty && _lastReadPost == null) {
       return RefreshIndicator(
         onRefresh: () => _load(refresh: true),
-        child: ListView(
+        child: CustomScrollView(
           controller: _scrollController,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 98),
           physics: const AlwaysScrollableScrollPhysics(),
-          children: <Widget>[
-            const SizedBox(height: 80),
-            Icon(
-              Icons.bookmark_border,
-              size: 56,
-              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Your shelf is empty',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.playfairDisplay(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface.withValues(alpha: 0.75),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Swipe down on any story to save it here.',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.65),
+          slivers: <Widget>[
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 98),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Icon(
+                      Icons.bookmark_border,
+                      size: 56,
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Your shelf is empty',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface.withValues(alpha: 0.75),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Swipe up on any story to save it here.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: colorScheme.onSurfaceVariant
+                            .withValues(alpha: 0.65),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
