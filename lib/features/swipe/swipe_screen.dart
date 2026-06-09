@@ -909,15 +909,22 @@ class _DeckEmptyView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: const EdgeInsets.symmetric(horizontal: 36),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            Icon(Icons.auto_awesome_rounded,
-                size: 68, color: colorScheme.primary.withValues(alpha: 0.38)),
-            const SizedBox(height: 22),
+            // Icon
+            Icon(
+              Icons.auto_awesome_rounded,
+              size: 64,
+              color: colorScheme.primary.withValues(alpha: 0.38),
+            ),
+            const SizedBox(height: 20),
+
+            // Headline
             Text(
               "You're all caught up!",
               textAlign: TextAlign.center,
@@ -927,7 +934,9 @@ class _DeckEmptyView extends ConsumerWidget {
                 color: colorScheme.onSurface.withValues(alpha: 0.85),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
+
+            // Sub-text
             Text(
               'New stories are on their way.\nCheck back soon.',
               textAlign: TextAlign.center,
@@ -935,6 +944,80 @@ class _DeckEmptyView extends ConsumerWidget {
                 fontSize: 15,
                 color: colorScheme.onSurfaceVariant.withValues(alpha: 0.68),
                 height: 1.55,
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Divider with label
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Divider(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    'While you wait…',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Divider(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.4),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 24),
+
+            // Community prompt
+            Text(
+              'The feed grows when the community writes.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface.withValues(alpha: 0.82),
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Got a story in your head? A memory worth keeping? '
+              'Share it — someone out there is waiting to read exactly what only you can write.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.72),
+                height: 1.6,
+              ),
+            ),
+
+            const SizedBox(height: 28),
+
+            // CTA
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () => context.push('/post/create'),
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Write a story'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  textStyle: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ),
           ],
