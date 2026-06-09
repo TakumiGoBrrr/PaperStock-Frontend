@@ -404,6 +404,10 @@ class _BookmarksTab extends ConsumerStatefulWidget {
 
 class _BookmarksTabState extends ConsumerState<_BookmarksTab> {
   final List<_BmItem> _items = [];
+  // Dedicated controller so the bookmarks scroll position stays isolated and
+  // doesn't leak into the shared NestedScrollView (which would otherwise push
+  // the next tab's content up under the header).
+  final ScrollController _scrollController = ScrollController();
   bool _isLoading = true;
   bool _isLoadingMore = false;
   bool _hasMore = false;
@@ -475,6 +479,12 @@ class _BookmarksTabState extends ConsumerState<_BookmarksTab> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _load({bool refresh = false}) async {
@@ -581,6 +591,7 @@ class _BookmarksTabState extends ConsumerState<_BookmarksTab> {
       return RefreshIndicator(
         onRefresh: () => _load(refresh: true),
         child: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 98),
           physics: const AlwaysScrollableScrollPhysics(),
           children: <Widget>[
@@ -625,6 +636,7 @@ class _BookmarksTabState extends ConsumerState<_BookmarksTab> {
           return false;
         },
         child: CustomScrollView(
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           cacheExtent: 600,
           slivers: <Widget>[
