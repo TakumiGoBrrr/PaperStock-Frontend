@@ -993,7 +993,7 @@ class _DeckEmptyView extends ConsumerWidget {
             const SizedBox(height: 10),
             Text(
               'Got a story in your head? A memory worth keeping? '
-              'Share it — someone out there is waiting to read exactly what only you can write.',
+              'Share it. Someone out there is waiting to read exactly what only you can write.',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
                 fontSize: 14,
