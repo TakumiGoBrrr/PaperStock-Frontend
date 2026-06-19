@@ -750,10 +750,16 @@ class _ScrollContent extends ConsumerWidget {
                                 }
                               }
 
+                              final canReport = currentUserId != null &&
+                                  currentUserId.isNotEmpty &&
+                                  comment.authorId != currentUserId;
+
                               return _CommentTile(
                                 comment: comment,
                                 canDelete: canDelete,
                                 onDelete: canDelete ? onDelete : null,
+                                canReport: canReport,
+                                postId: post.id,
                               );
                             },
                             separatorBuilder: (_, __) =>
@@ -1056,11 +1062,15 @@ class _CommentTile extends ConsumerWidget {
     required this.comment,
     required this.canDelete,
     required this.onDelete,
+    this.canReport = false,
+    this.postId = '',
   });
 
   final Comment comment;
   final bool canDelete;
   final VoidCallback? onDelete;
+  final bool canReport;
+  final String postId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1135,6 +1145,18 @@ class _CommentTile extends ConsumerWidget {
                         onPressed: onDelete,
                         icon: Icon(Icons.delete_outline, color: readSub),
                         tooltip: 'Delete comment',
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    if (canReport)
+                      IconButton(
+                        onPressed: () => _showReportCommentDialog(
+                          context,
+                          ref,
+                          comment: comment,
+                          postId: postId,
+                        ),
+                        icon: Icon(Icons.flag_outlined, size: 18, color: readSub),
+                        tooltip: 'Report comment',
                         visualDensity: VisualDensity.compact,
                       ),
                   ],
@@ -1700,6 +1722,182 @@ Future<void> _submitReport(
           storyId: post.id,
           direction: 'left', // swipe left (skip)
         );
+  } on DioException catch (e) {
+    if (!context.mounted) return;
+    final msg = e.response?.data?['detail']?.toString() ?? 'Failed to submit report';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+}
+
+Future<void> _showReportCommentDialog(
+  BuildContext context,
+  WidgetRef ref, {
+  required Comment comment,
+  required String postId,
+}) async {
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: isDark ? cardCharcoalDark : cardCreamLight,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (ctx) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Report Comment',
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? cardCharcoalText : cardCreamText,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Why are you reporting this comment?',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: isDark ? cardCharcoalSubtext : cardCreamSubtext,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _ReportOption(
+                label: 'Spam',
+                onTap: () => _submitCommentReport(
+                  ctx, ref,
+                  comment: comment, postId: postId, reason: 'spam',
+                ),
+                isDark: isDark,
+              ),
+              _ReportOption(
+                label: 'Abuse or Harassment',
+                onTap: () => _submitCommentReport(
+                  ctx, ref,
+                  comment: comment, postId: postId, reason: 'abuse',
+                ),
+                isDark: isDark,
+              ),
+              _ReportOption(
+                label: 'Other',
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final customReason = await showDialog<String>(
+                    context: context,
+                    builder: (dialogCtx) {
+                      final ctrl = TextEditingController();
+                      return AlertDialog(
+                        backgroundColor: isDark ? cardCharcoalDark : cardCreamLight,
+                        title: Text(
+                          'Specify Reason',
+                          style: GoogleFonts.playfairDisplay(
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? cardCharcoalText : cardCreamText,
+                          ),
+                        ),
+                        content: TextField(
+                          controller: ctrl,
+                          maxLength: 200,
+                          autofocus: true,
+                          style: GoogleFonts.inter(
+                            color: isDark ? cardCharcoalText : cardCreamText,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Enter reason (up to 200 characters)...',
+                            hintStyle: GoogleFonts.inter(
+                              color: isDark ? cardCharcoalSubtext : cardCreamSubtext,
+                            ),
+                            focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(
+                                color: isDark ? cardCharcoalText : cardCreamText,
+                              ),
+                            ),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogCtx),
+                            child: Text(
+                              'CANCEL',
+                              style: GoogleFonts.inter(
+                                color: isDark ? cardCharcoalSubtext : cardCreamSubtext,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              final text = ctrl.text.trim();
+                              if (text.isNotEmpty) Navigator.pop(dialogCtx, text);
+                            },
+                            child: Text(
+                              'SUBMIT',
+                              style: GoogleFonts.inter(
+                                color: isDark ? cardCharcoalText : cardCreamText,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                  if (customReason != null && customReason.isNotEmpty) {
+                    if (context.mounted) {
+                      _submitCommentReport(
+                        context, ref,
+                        comment: comment, postId: postId,
+                        reason: customReason, popContext: false,
+                      );
+                    }
+                  }
+                },
+                isDark: isDark,
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+Future<void> _submitCommentReport(
+  BuildContext context,
+  WidgetRef ref, {
+  required Comment comment,
+  required String postId,
+  required String reason,
+  bool popContext = true,
+}) async {
+  if (popContext && context.mounted) Navigator.pop(context);
+
+  final dio = ref.read(apiClientProvider).dio;
+  try {
+    await dio.post<void>(
+      '/api/v1/posts/$postId/comments/${comment.id}/report',
+      data: <String, dynamic>{'reason': reason},
+    );
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Comment reported. Thank you for keeping PaperStock safe.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   } on DioException catch (e) {
     if (!context.mounted) return;
     final msg = e.response?.data?['detail']?.toString() ?? 'Failed to submit report';
