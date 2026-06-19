@@ -248,8 +248,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             Center(
                               child: Image.asset(
                                 theme.brightness == Brightness.dark
-                                    ? 'assets/logo_dark.png'
-                                    : 'assets/logo_light.png',
+                                    ? 'assets/logo_light.png'
+                                    : 'assets/logo_dark.png',
                                 height: 72,
                               ),
                             ),

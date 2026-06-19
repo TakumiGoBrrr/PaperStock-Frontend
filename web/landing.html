@@ -75,13 +75,10 @@
       color: var(--text);
     }
 
-    .logo-mark {
+    .logo-img {
       width: 26px; height: 26px;
-      border-radius: 7px;
-      background: linear-gradient(135deg, var(--gold-2), var(--rose));
-      display: flex; align-items: center; justify-content: center;
-      color: #1a1a10; font-size: 14px; font-weight: 700;
-      font-family: 'Fraunces', serif;
+      object-fit: contain;
+      display: block;
     }
 
     .nav-right { display: flex; align-items: center; gap: 26px; }
@@ -318,7 +315,7 @@
 
   <!-- NAV -->
   <nav>
-    <a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center;"><span class="logo"><span class="logo-mark">P</span>PaperStock</span></a>
+    <a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center;"><span class="logo"><img src="/assets/assets/logo_transparent.png" class="logo-img" alt="PaperStock Logo" />PaperStock</span></a>
     <div class="nav-right">
       <a href="/feed">Explore</a>
       <a href="/register">For writers</a>
