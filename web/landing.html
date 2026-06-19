@@ -2,11 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <script>
+    // Redirect logged-in users directly to the app feed
+    (function() {
+      const token = localStorage.getItem('flutter.access_token');
+      if (token && token.trim() !== '') {
+        window.location.href = '/feed';
+      }
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PaperStock: Where stories meet their readers</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  
+  <!-- PWA support -->
+  <link rel="manifest" href="manifest.json?v=2" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="PaperStock" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="favicon.png?v=2" />
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -25,6 +43,13 @@
       --text-dim: #66614f;
     }
 
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
     html { scroll-behavior: smooth; }
 
     body {
@@ -32,7 +57,6 @@
       color: var(--text);
       font-family: 'Inter', system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
       position: relative;
     }
 
@@ -49,47 +73,25 @@
       pointer-events: none;
     }
 
-    /* ── NAV ── */
     nav {
       position: fixed;
       top: 0; left: 0; right: 0;
       z-index: 50;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 0 clamp(20px, 4vw, 48px);
-      height: 64px;
-      background: rgba(15,15,10,0.72);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
+      justify-content: center;
+      padding: 0 20px;
+      height: 44px;
+      background: #16140f;
     }
 
     .logo {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-      font-family: 'Fraunces', serif;
-      font-size: 19px;
-      font-weight: 600;
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 700;
       letter-spacing: -0.01em;
-      color: var(--text);
+      color: #f4edd8;
     }
-
-    .logo-mark {
-      width: 26px; height: 26px;
-      border-radius: 7px;
-      background: linear-gradient(135deg, var(--gold-2), var(--rose));
-      display: flex; align-items: center; justify-content: center;
-      color: #1a1a10; font-size: 14px; font-weight: 700;
-      font-family: 'Fraunces', serif;
-    }
-
-    .nav-right { display: flex; align-items: center; gap: 26px; }
-    .nav-right a {
-      font-size: 13.5px; font-weight: 500; color: var(--text-mid);
-      text-decoration: none; transition: color .15s;
-    }
-    .nav-right a:hover { color: var(--text); }
 
     .btn-nav {
       background: var(--text);
@@ -108,39 +110,30 @@
     .stage {
       position: relative;
       z-index: 1;
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 120px 20px 80px;
+      padding: 64px 20px 40px;
       text-align: center;
+      overflow: hidden;
+      box-sizing: border-box;
     }
 
-    .pill {
-      display: inline-flex;
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      padding: 7px 15px 7px 9px;
-      font-size: 12.5px;
-      font-weight: 500;
-      color: var(--text-mid);
-      margin-bottom: 30px;
-      backdrop-filter: blur(8px);
+      justify-content: center;
+      width: 100%;
     }
-    .pill .dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--sage);
-      box-shadow: 0 0 0 3px rgba(138,155,124,0.2);
-    }
-    .pill b { color: var(--text); font-weight: 600; }
 
     .stage h1 {
       font-family: 'Fraunces', serif;
-      font-size: clamp(34px, 6vw, 76px);
+      font-size: clamp(40px, 7vw, 84px);
       font-weight: 600;
       line-height: 1.04;
       letter-spacing: -0.025em;
@@ -157,10 +150,10 @@
     }
 
     .stage .sub {
-      font-size: clamp(15px, 1.6vw, 18px);
+      font-size: clamp(17px, 1.9vw, 21px);
       line-height: 1.65;
       color: var(--text-mid);
-      max-width: 46ch;
+      max-width: 48ch;
       margin-bottom: 38px;
     }
 
@@ -209,6 +202,11 @@
       z-index: 2;
       animation: float 9s ease-in-out infinite;
       transition: transform .25s, border-color .25s;
+
+      /* GPU layer promotion to run at native display refresh rate (120Hz) */
+      will-change: transform, translate;
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
     }
     .float-card:hover {
       transform: scale(1.04) translateY(-4px) !important;
@@ -282,35 +280,117 @@
     .stat .num span { color: var(--gold); }
     .stat .label { font-size: 13px; color: var(--text-mid); margin-top: 4px; }
 
-    /* ── RESPONSIVE: hide float cards, stack into grid ── */
+    /* ── RESPONSIVE: adjust stage padding ── */
     @media (max-width: 1080px) {
-      .float-card { display: none; }
-      .stage { min-height: auto; padding: 120px 20px 50px; }
-      .mobile-cards { display: grid !important; }
-    }
-
-    /* mobile fallback grid (hidden on desktop) */
-    .mobile-cards {
-      display: none;
-      position: relative;
-      z-index: 1;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 14px;
-      max-width: 800px;
-      margin: 10px auto 0;
-      padding: 0 20px 70px;
-    }
-    .mobile-cards .float-card {
-      position: static;
-      display: flex;
-      width: auto;
-      transform: none !important;
-      animation: none;
+      .stage { padding: 120px 20px 50px; }
     }
 
     @media (max-width: 640px) {
-      .nav-right a { display: none; }
+      .float-card {
+        width: 180px;
+        padding: 10px;
+        gap: 6px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        opacity: 0.55;
+      }
+      .float-card:hover {
+        opacity: 1;
+        z-index: 10;
+        transform: scale(1.05) !important;
+      }
+      
+      .fc-title { font-size: 12px; line-height: 1.25; }
+      .fc-snippet {
+        font-size: 10px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .tag { font-size: 8px; padding: 1px 5px; }
+      .avatar { width: 18px; height: 18px; font-size: 9px; }
+      .a-name { font-size: 10px; }
+      .a-time { font-size: 9px; }
+
+      /* mobile-specific positions peeking from margins */
+      .fc-1 { left: -50px; top: 12%; }
+      .fc-2 { right: -50px; top: 6%; }
+      .fc-5 { left: -70px; top: 38%; }
+      .fc-6 { right: -70px; top: 34%; }
+      .fc-3 { left: -50px; bottom: 12%; }
+      .fc-4 { right: -50px; bottom: 8%; }
+
+      .actions {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        max-width: 320px;
+        margin: 0 auto;
+        gap: 12px;
+      }
+      .actions a {
+        width: 100%;
+      }
+      .btn-primary, .btn-ghost {
+        width: 100%;
+        text-align: center;
+      }
       .stats { gap: 28px 40px; }
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(8px);
+    }
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      max-width: 440px;
+      width: 100%;
+      text-align: left;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.6);
+      animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-content h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    .modal-content p {
+      font-size: 14.5px;
+      color: var(--text-mid);
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+    .modal-content ol {
+      padding-left: 20px;
+      margin-bottom: 24px;
+    }
+    .modal-content li {
+      font-size: 14px;
+      color: var(--text-mid);
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+    .modal-content li strong {
+      color: var(--text);
     }
   </style>
 </head>
@@ -318,13 +398,7 @@
 
   <!-- NAV -->
   <nav>
-    <a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center;"><span class="logo"><span class="logo-mark">P</span>PaperStock</span></a>
-    <div class="nav-right">
-      <a href="/feed">Explore</a>
-      <a href="/register">For writers</a>
-      <a href="/feed">For readers</a>
-      <a href="/register" style="text-decoration: none;"><button class="btn-nav">Get started</button></a>
-    </div>
+    <a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center;"><span class="logo">PaperStock</span></a>
   </nav>
 
   <!-- HERO STAGE -->
@@ -374,50 +448,122 @@
     </article>
 
     <!-- centred text -->
-    <div class="pill"><span class="dot"></span> Built for <b>writers</b> &amp; <b>readers</b> alike</div>
-    <h1>Where every story finds <em>its</em> reader.</h1>
-    <p class="sub">PaperStock pairs bite-sized fiction, essays, and true stories with the people most likely to love them. Write, read, or just get lost for a while.</p>
-    <div class="actions">
-      <a href="/feed" style="text-decoration: none;"><button class="btn-primary">Start reading, it's free</button></a>
-      <a href="/post/create" style="text-decoration: none;"><button class="btn-ghost">Share your first story</button></a>
+    <div class="hero-content">
+      <h1>Where every story finds <em>its</em> reader.</h1>
+      <p class="sub">PaperStock pairs bite-sized fiction, essays, and true stories with the people most likely to love them. Write, read, or just get lost for a while.</p>
+      <div class="actions">
+        <a href="/feed" style="text-decoration: none;"><button class="btn-primary">Start reading, it's free</button></a>
+        <button id="install-btn" class="btn-ghost">Add to Home Screen</button>
+      </div>
     </div>
   </section>
 
-  <!-- mobile card grid -->
-  <div class="mobile-cards">
-    <article class="float-card">
-      <div class="fc-head"><span class="avatar a-gold">R</span><span class="a-name">Rania</span><span class="a-time">4 min</span></div>
-      <div class="fc-title">The woman who collected silences</div>
-      <div class="fc-snippet">She kept them in jars. A Tuesday afternoon in an empty library, each one labelled in her careful hand.</div>
-      <div class="fc-tags"><span class="tag">surreal</span><span class="tag">flash fiction</span></div>
-    </article>
-    <article class="float-card">
-      <div class="fc-head"><span class="avatar a-rose">J</span><span class="a-name">Jin</span><span class="a-time">4 min</span></div>
-      <div class="fc-title">Eleven seconds</div>
-      <div class="fc-snippet">The world record for holding your breath is twenty-four minutes. Mine is eleven. Here's why that was enough.</div>
-      <div class="fc-tags"><span class="tag">reallife</span><span class="tag">family</span></div>
-    </article>
-    <article class="float-card">
-      <div class="fc-head"><span class="avatar a-sage">M</span><span class="a-name">Maren</span><span class="a-time">6 min</span></div>
-      <div class="fc-title">A room full of clocks</div>
-      <div class="fc-snippet">Every clock showed a different time. My grandmother said that was the point.</div>
-      <div class="fc-tags"><span class="tag">magicalrealism</span><span class="tag">quiet</span></div>
-    </article>
-    <article class="float-card">
-      <div class="fc-head"><span class="avatar a-gold">L</span><span class="a-name">Leo</span><span class="a-time">7 min</span></div>
-      <div class="fc-title">The cartographer's daughter</div>
-      <div class="fc-snippet">She mapped every coastline her father sailed, every bay except the one where he disappeared.</div>
-      <div class="fc-tags"><span class="tag">adventure</span><span class="tag">literary</span></div>
-    </article>
+  <!-- INSTALL INSTRUCTIONS MODAL -->
+  <div id="install-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h3>Install PaperStock</h3>
+      <p>Follow these steps to add PaperStock to your home screen:</p>
+      <ol id="instructions-list">
+      </ol>
+      <button id="close-modal-btn" class="btn-primary" style="margin-top: 12px; width: 100%; text-align: center;">Got it</button>
+    </div>
   </div>
 
-  <!-- STATS -->
-  <section class="stats">
-    <div class="stat"><div class="num">12<span>k</span></div><div class="label">stories shared</div></div>
-    <div class="stat"><div class="num">340<span>k</span></div><div class="label">reads this month</div></div>
-    <div class="stat"><div class="num">5<span>min</span></div><div class="label">average read</div></div>
-    <div class="stat"><div class="num">98<span>%</span></div><div class="label">finish what they start</div></div>
-  </section>
+  <script>
+    // 1. Register Service Worker to enable PWA installability
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/flutter_service_worker.js')
+          .then((reg) => console.log('Service worker registered.', reg))
+          .catch((err) => console.log('Service worker registration failed: ', err));
+      });
+    }
 
+    // 2. Install prompt logic
+    let deferredPrompt = null;
+    const installBtn = document.getElementById('install-btn');
+    const installModal = document.getElementById('install-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const instructionsList = document.getElementById('instructions-list');
+
+    // Hide button if already in standalone mode
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+      if (installBtn) installBtn.style.display = 'none';
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent browser default prompt
+      e.preventDefault();
+      // Store event
+      deferredPrompt = e;
+    });
+
+    if (installBtn) {
+      installBtn.addEventListener('click', async () => {
+        if (deferredPrompt) {
+          // Trigger the browser's install prompt
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          console.log(`User response to install prompt: ${outcome}`);
+          deferredPrompt = null;
+        } else {
+          // Show manual instructions modal
+          showInstallModal();
+        }
+      });
+    }
+
+    if (closeModalBtn) {
+      closeModalBtn.addEventListener('click', () => {
+        installModal.style.display = 'none';
+      });
+    }
+
+    // Close modal if clicked outside
+    installModal.addEventListener('click', (e) => {
+      if (e.target === installModal) {
+        installModal.style.display = 'none';
+      }
+    });
+
+    function showInstallModal() {
+      // Clear previous list
+      instructionsList.innerHTML = '';
+
+      // Determine platform-specific instructions
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      const isIos = /iphone|ipad|ipod/.test(userAgent);
+      const isMac = /macintosh|mac os x/.test(userAgent);
+
+      let steps = [];
+      if (isIos) {
+        steps = [
+          "Tap the <strong>Share</strong> button at the bottom of Safari (square with an up arrow).",
+          "Scroll down the menu and select <strong>'Add to Home Screen'</strong>.",
+          "Tap <strong>'Add'</strong> in the top-right corner to install."
+        ];
+      } else if (isMac && !/chrome|chromium|crios/.test(userAgent)) {
+        steps = [
+          "On Safari, click the <strong>Share</strong> button in the toolbar.",
+          "Select <strong>'Add to Dock'</strong>.",
+          "Confirm the installation in the prompt."
+        ];
+      } else {
+        steps = [
+          "Tap the <strong>browser menu</strong> button (three dots in the top/bottom corner).",
+          "Select <strong>'Install App'</strong> or <strong>'Add to Home Screen'</strong>.",
+          "Confirm the installation in the prompt."
+        ];
+      }
+
+      steps.forEach((stepText) => {
+        const li = document.createElement('li');
+        li.innerHTML = stepText;
+        instructionsList.appendChild(li);
+      });
+
+      installModal.style.display = 'flex';
+    }
+  </script>
 </body>
 </html>

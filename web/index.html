@@ -19,43 +19,45 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="PaperStock">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" href="favicon.png?v=2"/>
 
   <title>PaperStock</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=2">
 
   <script>
     (function () {
-      var theme = localStorage.getItem('theme_mode');
+      var theme = localStorage.getItem('flutter.theme_mode');
       var isDark = theme !== 'light';
 
-      // Keep the initial loading screen on a "paper" background to avoid a
-      // black flash before Flutter draws the first frame.
-      var bg = '#ffffff';
-      var fg = 'rgba(0, 0, 0, 0.80)';
+      // Keep the initial loading screen matching the theme
+      // Dark mode: #16140f (leatherBrown) & #f4edd8 (inkParchment)
+      // Light mode: #FAF6EE (_lightSurface) & #1c1a14 (_lightOnSurface)
+      var bg = isDark ? '#16140f' : '#FAF6EE';
+      var fg = isDark ? '#f4edd8' : '#1c1a14';
 
       var style = document.createElement('style');
       style.innerHTML =
         'html, body#app-body { background-color: ' + bg + ' !important; }\n' +
-        '#loading { color: ' + fg + ' !important; }';
+        '#loading { color: ' + fg + ' !important; background-color: ' + bg + ' !important; }';
       document.head.appendChild(style);
     })();
   </script>
 </head>
-<body style="background-color: #ffffff;" id="app-body">
+<body style="background-color: #16140f;" id="app-body">
   <script>
-    const theme = localStorage.getItem('theme_mode');
-    document.body.style.backgroundColor =
-      '#ffffff';
+    const theme = localStorage.getItem('flutter.theme_mode');
+    const isDark = theme !== 'light';
+    document.body.style.backgroundColor = isDark ? '#16140f' : '#FAF6EE';
   </script>
 
   <style>
@@ -65,9 +67,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: transparent;
+      background-color: #16140f;
       font: 700 28px ui-serif, Georgia, serif;
       letter-spacing: 0.2px;
+      z-index: 99999;
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
     }
   </style>
 
@@ -76,7 +81,13 @@
   <script>
     window.addEventListener('flutter-first-frame', function () {
       var el = document.getElementById('loading');
-      if (el) el.remove();
+      if (el) {
+        el.style.pointerEvents = 'none';
+        el.style.opacity = '0';
+        setTimeout(function() {
+          el.remove();
+        }, 500);
+      }
     });
   </script>
 
