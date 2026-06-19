@@ -123,7 +123,7 @@ class _CommunityGuidelinesScreenState
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          'Fiction is welcome — dark themes, complex characters, '
+                          'Fiction is welcome: dark themes, complex characters, '
                           'and difficult subjects all have a place here. These '
                           'rules are about how you treat real people, not about '
                           'limiting your imagination.',
@@ -361,7 +361,7 @@ const List<_Guideline> _guidelines = <_Guideline>[
     icon: Icons.lock_outline,
     title: 'No personal information',
     body: 'Never post private or identifying information about yourself or '
-        'anyone else — real names tied to others, addresses, phone numbers, '
+        'anyone else: real names tied to others, addresses, phone numbers, '
         'emails, workplaces, or financial details. No doxxing.',
   ),
   _Guideline(
@@ -389,7 +389,7 @@ const List<_Guideline> _guidelines = <_Guideline>[
     icon: Icons.verified_outlined,
     title: 'Be authentic',
     body: 'Don\'t impersonate others, spam, or post misleading content. '
-        'Respect copyright — share your own work or work you\'re allowed to '
+        'Respect copyright: share your own work or work you\'re allowed to '
         'share.',
   ),
 ];
