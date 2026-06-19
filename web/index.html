@@ -38,10 +38,11 @@
       var theme = localStorage.getItem('theme_mode');
       var isDark = theme !== 'light';
 
-      // Keep the initial loading screen on a "paper" background to avoid a
-      // black flash before Flutter draws the first frame.
-      var bg = '#ffffff';
-      var fg = 'rgba(0, 0, 0, 0.80)';
+      // Keep the initial loading screen matching the theme
+      // Dark mode: #16140f (leatherBrown) & #f4edd8 (inkParchment)
+      // Light mode: #FAF6EE (_lightSurface) & #1c1a14 (_lightOnSurface)
+      var bg = isDark ? '#16140f' : '#FAF6EE';
+      var fg = isDark ? '#f4edd8' : '#1c1a14';
 
       var style = document.createElement('style');
       style.innerHTML =
@@ -51,11 +52,11 @@
     })();
   </script>
 </head>
-<body style="background-color: #ffffff;" id="app-body">
+<body style="background-color: #16140f;" id="app-body">
   <script>
     const theme = localStorage.getItem('theme_mode');
-    document.body.style.backgroundColor =
-      '#ffffff';
+    const isDark = theme !== 'light';
+    document.body.style.backgroundColor = isDark ? '#16140f' : '#FAF6EE';
   </script>
 
   <style>
