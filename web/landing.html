@@ -25,6 +25,13 @@
       --text-dim: #66614f;
     }
 
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
     html { scroll-behavior: smooth; }
 
     body {
@@ -32,7 +39,6 @@
       color: var(--text);
       font-family: 'Inter', system-ui, sans-serif;
       -webkit-font-smoothing: antialiased;
-      overflow-x: hidden;
       position: relative;
     }
 
@@ -56,7 +62,7 @@
       z-index: 50;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: center;
       padding: 0 clamp(20px, 4vw, 48px);
       height: 64px;
       background: rgba(15,15,10,0.72);
@@ -105,13 +111,15 @@
     .stage {
       position: relative;
       z-index: 1;
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 120px 20px 80px;
+      padding: 84px 20px 40px;
       text-align: center;
+      overflow: hidden;
+      box-sizing: border-box;
     }
 
     .hero-content {
@@ -333,9 +341,6 @@
   <!-- NAV -->
   <nav>
     <a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center;"><span class="logo"><img src="/assets/assets/logo_transparent.png" class="logo-img" alt="PaperStock Logo" />PaperStock</span></a>
-    <div class="nav-right">
-      <a href="/register" style="text-decoration: none;"><button class="btn-nav">Get started</button></a>
-    </div>
   </nav>
 
   <!-- HERO STAGE -->
@@ -397,13 +402,7 @@
 
 
 
-  <!-- STATS -->
-  <section class="stats">
-    <div class="stat"><div class="num">12<span>k</span></div><div class="label">stories shared</div></div>
-    <div class="stat"><div class="num">340<span>k</span></div><div class="label">reads this month</div></div>
-    <div class="stat"><div class="num">5<span>min</span></div><div class="label">average read</div></div>
-    <div class="stat"><div class="num">98<span>%</span></div><div class="label">finish what they start</div></div>
-  </section>
+
 
 </body>
 </html>
