@@ -245,7 +245,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           if (isDesktop) return const SizedBox.shrink();
 
           final theme = Theme.of(context);
-          final colorScheme = theme.colorScheme;
           return SafeArea(
             top: false,
             child: Padding(
