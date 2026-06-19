@@ -14,7 +14,7 @@ if (hasKeystore) {
 }
 
 android {
-    namespace = "com.loreflow.paperstock"
+    namespace = "com.frae.paperstock"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -39,7 +39,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.loreflow.paperstock"
+        applicationId = "com.frae.paperstock"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
