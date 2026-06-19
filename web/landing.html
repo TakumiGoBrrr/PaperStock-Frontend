@@ -461,8 +461,8 @@
   <!-- INSTALL INSTRUCTIONS MODAL -->
   <div id="install-modal" class="modal-overlay" style="display: none;">
     <div class="modal-content">
-      <h3>Install PaperStock</h3>
-      <p>Follow these steps to add PaperStock to your home screen:</p>
+      <h3 id="modal-title">Install PaperStock</h3>
+      <p id="modal-subtitle">Follow these steps to add PaperStock to your home screen:</p>
       <ol id="instructions-list">
       </ol>
       <button id="close-modal-btn" class="btn-primary" style="margin-top: 12px; width: 100%; text-align: center;">Got it</button>
@@ -530,25 +530,47 @@
       // Clear previous list
       instructionsList.innerHTML = '';
 
+      const modalTitle = document.getElementById('modal-title');
+      const modalSubtitle = document.getElementById('modal-subtitle');
+
       // Determine platform-specific instructions
       const userAgent = window.navigator.userAgent.toLowerCase();
       const isIos = /iphone|ipad|ipod/.test(userAgent);
       const isMac = /macintosh|mac os x/.test(userAgent);
+      const isSafari = userAgent.includes('safari') && !userAgent.includes('crios') && !userAgent.includes('fxios');
 
       let steps = [];
       if (isIos) {
-        steps = [
-          "Tap the <strong>Share</strong> button at the bottom of Safari (square with an up arrow).",
-          "Scroll down the menu and select <strong>'Add to Home Screen'</strong>.",
-          "Tap <strong>'Add'</strong> in the top-right corner to install."
-        ];
+        if (isSafari) {
+          if (modalTitle) modalTitle.textContent = "Install PaperStock";
+          if (modalSubtitle) modalSubtitle.textContent = "Follow these steps to add PaperStock to your home screen:";
+          steps = [
+            "Tap the <strong>Share</strong> button at the bottom of Safari (square with an up arrow).",
+            "Scroll down the menu and select <strong>'Add to Home Screen'</strong>.",
+            "Tap <strong>'Add'</strong> in the top-right corner to install."
+          ];
+        } else {
+          if (modalTitle) modalTitle.textContent = "Safari Required";
+          if (modalSubtitle) modalSubtitle.innerHTML = "iOS only allows adding apps to the home screen using Safari. Please follow these steps:";
+          steps = [
+            "Copy the website URL: <strong>https://paperstock.app</strong>",
+            "Open the <strong>Safari</strong> browser app on your iPhone.",
+            "Paste and load the URL in Safari.",
+            "Tap the <strong>Share</strong> button at the bottom of Safari.",
+            "Select <strong>'Add to Home Screen'</strong> from the menu."
+          ];
+        }
       } else if (isMac && !/chrome|chromium|crios/.test(userAgent)) {
+        if (modalTitle) modalTitle.textContent = "Install PaperStock";
+        if (modalSubtitle) modalSubtitle.textContent = "Follow these steps to add PaperStock to your home screen:";
         steps = [
           "On Safari, click the <strong>Share</strong> button in the toolbar.",
           "Select <strong>'Add to Dock'</strong>.",
           "Confirm the installation in the prompt."
         ];
       } else {
+        if (modalTitle) modalTitle.textContent = "Install PaperStock";
+        if (modalSubtitle) modalSubtitle.textContent = "Follow these steps to add PaperStock to your home screen:";
         steps = [
           "Tap the <strong>browser menu</strong> button (three dots in the top/bottom corner).",
           "Select <strong>'Install App'</strong> or <strong>'Add to Home Screen'</strong>.",
