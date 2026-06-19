@@ -114,30 +114,19 @@
       text-align: center;
     }
 
-    .pill {
-      display: inline-flex;
+    .hero-content {
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid var(--border);
-      border-radius: 100px;
-      padding: 7px 15px 7px 9px;
-      font-size: 12.5px;
-      font-weight: 500;
-      color: var(--text-mid);
-      margin-bottom: 30px;
-      backdrop-filter: blur(8px);
+      justify-content: center;
+      width: 100%;
     }
-    .pill .dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--sage);
-      box-shadow: 0 0 0 3px rgba(138,155,124,0.2);
-    }
-    .pill b { color: var(--text); font-weight: 600; }
 
     .stage h1 {
       font-family: 'Fraunces', serif;
-      font-size: clamp(34px, 6vw, 76px);
+      font-size: clamp(40px, 7vw, 84px);
       font-weight: 600;
       line-height: 1.04;
       letter-spacing: -0.025em;
@@ -154,10 +143,10 @@
     }
 
     .stage .sub {
-      font-size: clamp(15px, 1.6vw, 18px);
+      font-size: clamp(17px, 1.9vw, 21px);
       line-height: 1.65;
       color: var(--text-mid);
-      max-width: 46ch;
+      max-width: 48ch;
       margin-bottom: 38px;
     }
 
@@ -396,12 +385,13 @@
     </article>
 
     <!-- centred text -->
-    <div class="pill"><span class="dot"></span> Built for <b>writers</b> &amp; <b>readers</b> alike</div>
-    <h1>Where every story finds <em>its</em> reader.</h1>
-    <p class="sub">PaperStock pairs bite-sized fiction, essays, and true stories with the people most likely to love them. Write, read, or just get lost for a while.</p>
-    <div class="actions">
-      <a href="/feed" style="text-decoration: none;"><button class="btn-primary">Start reading, it's free</button></a>
-      <a href="/post/create" style="text-decoration: none;"><button class="btn-ghost">Share your first story</button></a>
+    <div class="hero-content">
+      <h1>Where every story finds <em>its</em> reader.</h1>
+      <p class="sub">PaperStock pairs bite-sized fiction, essays, and true stories with the people most likely to love them. Write, read, or just get lost for a while.</p>
+      <div class="actions">
+        <a href="/feed" style="text-decoration: none;"><button class="btn-primary">Start reading, it's free</button></a>
+        <a href="/post/create" style="text-decoration: none;"><button class="btn-ghost">Share your first story</button></a>
+      </div>
     </div>
   </section>
 
