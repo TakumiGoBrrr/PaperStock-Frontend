@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PaperStock: Where stories meet their readers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-0:     #0f0f0a;
+      --bg-1:     #16160e;
+      --surface:  #1c1c12;
+      --surface-2:#211f15;
+      --border:   rgba(255,255,255,0.08);
+      --gold:     #d4b676;
+      --gold-2:   #e8cf9a;
+      --rose:     #c98b7a;
+      --sage:     #8a9b7c;
+      --text:     #f2efe6;
+      --text-mid: #a39c87;
+      --text-dim: #66614f;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-0);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ambient background glows */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(40% 35% at 18% 22%, rgba(212,182,118,0.10) 0%, transparent 70%),
+        radial-gradient(38% 38% at 84% 70%, rgba(201,139,122,0.08) 0%, transparent 70%),
+        radial-gradient(45% 40% at 50% 100%, rgba(138,155,124,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(20px, 4vw, 48px);
+      height: 64px;
+      background: rgba(15,15,10,0.72);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-family: 'Fraunces', serif;
+      font-size: 19px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    .logo-mark {
+      width: 26px; height: 26px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, var(--gold-2), var(--rose));
+      display: flex; align-items: center; justify-content: center;
+      color: #1a1a10; font-size: 14px; font-weight: 700;
+      font-family: 'Fraunces', serif;
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 26px; }
+    .nav-right a {
+      font-size: 13.5px; font-weight: 500; color: var(--text-mid);
+      text-decoration: none; transition: color .15s;
+    }
+    .nav-right a:hover { color: var(--text); }
+
+    .btn-nav {
+      background: var(--text);
+      color: #14140d;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13.5px; font-weight: 600;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .btn-nav:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.4); }
+
+    /* ── HERO STAGE ── */
+    .stage {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 20px 80px;
+      text-align: center;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 7px 15px 7px 9px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-mid);
+      margin-bottom: 30px;
+      backdrop-filter: blur(8px);
+    }
+    .pill .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--sage);
+      box-shadow: 0 0 0 3px rgba(138,155,124,0.2);
+    }
+    .pill b { color: var(--text); font-weight: 600; }
+
+    .stage h1 {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(34px, 6vw, 76px);
+      font-weight: 600;
+      line-height: 1.04;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      max-width: 14ch;
+      margin-bottom: 26px;
+    }
+    .stage h1 em {
+      font-style: italic;
+      background: linear-gradient(105deg, var(--gold-2), var(--rose));
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stage .sub {
+      font-size: clamp(15px, 1.6vw, 18px);
+      line-height: 1.65;
+      color: var(--text-mid);
+      max-width: 46ch;
+      margin-bottom: 38px;
+    }
+
+    .actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold-2), var(--gold));
+      color: #1a1408;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 8px 24px rgba(212,182,118,0.22);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(212,182,118,0.32); }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 14px 28px;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 500;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .btn-ghost:hover { border-color: rgba(255,255,255,0.4); background: rgba(255,255,255,0.07); }
+
+    /* ── FLOATING CARDS ── */
+    .float-card {
+      position: absolute;
+      width: 252px;
+      background: linear-gradient(180deg, var(--surface-2), var(--surface));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+      text-align: left;
+      z-index: 2;
+      animation: float 9s ease-in-out infinite;
+      transition: transform .25s, border-color .25s;
+    }
+    .float-card:hover {
+      transform: scale(1.04) translateY(-4px) !important;
+      border-color: rgba(212,182,118,0.35);
+      z-index: 5;
+    }
+
+    /* positions: orbiting the centred text */
+    .fc-1 { top: 16%;  left: 4%;  transform: rotate(-5deg);  animation-delay: 0s;   }
+    .fc-2 { top: 9%;   right: 5%; transform: rotate(4deg);   animation-delay: 1.4s; }
+    .fc-3 { bottom: 13%; left: 7%; transform: rotate(3deg);  animation-delay: 2.6s; }
+    .fc-4 { bottom: 9%; right: 6%; transform: rotate(-4deg); animation-delay: 0.8s; }
+    .fc-5 { top: 44%;  left: 1%;  transform: rotate(2deg);   animation-delay: 3.4s; }
+    .fc-6 { top: 40%;  right: 1%; transform: rotate(-3deg);  animation-delay: 2.0s; }
+
+    @keyframes float {
+      0%, 100% { translate: 0 0; }
+      50%      { translate: 0 -14px; }
+    }
+
+    .fc-head { display: flex; align-items: center; gap: 8px; }
+    .avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #1a1408;
+      flex-shrink: 0;
+    }
+    .a-gold { background: linear-gradient(135deg, var(--gold-2), var(--gold)); }
+    .a-rose { background: linear-gradient(135deg, #e0a292, var(--rose)); }
+    .a-sage { background: linear-gradient(135deg, #a7b896, var(--sage)); }
+    .a-name { font-size: 12px; font-weight: 600; color: #cfcabb; }
+    .a-time { font-size: 11px; color: var(--text-dim); margin-left: auto; }
+
+    .fc-title {
+      font-family: 'Fraunces', serif;
+      font-size: 15px; font-weight: 600; line-height: 1.3;
+      color: var(--text);
+    }
+    .fc-snippet { font-size: 12px; line-height: 1.55; color: var(--text-mid); }
+
+    .fc-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tag {
+      font-size: 10px; font-weight: 500;
+      color: var(--text-dim);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      padding: 2px 8px; border-radius: 20px;
+    }
+
+    /* ── STATS STRIP ── */
+    .stats {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: clamp(28px, 7vw, 90px);
+      padding: 40px 20px 90px;
+      border-top: 1px solid var(--border);
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .stat { text-align: center; }
+    .stat .num {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .stat .num span { color: var(--gold); }
+    .stat .label { font-size: 13px; color: var(--text-mid); margin-top: 4px; }
+
+    /* ── RESPONSIVE: hide float cards, stack into grid ── */
+    @media (max-width: 1080px) {
+      .float-card { display: none; }
+      .stage { min-height: auto; padding: 120px 20px 50px; }
+      .mobile-cards { display: grid !important; }
+    }
+
+    /* mobile fallback grid (hidden on desktop) */
+    .mobile-cards {
+      display: none;
+      position: relative;
+      z-index: 1;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      max-width: 800px;
+      margin: 10px auto 0;
+      padding: 0 20px 70px;
+    }
+    .mobile-cards .float-card {
+      position: static;
+      display: flex;
+      width: auto;
+      transform: none !important;
+      animation: none;
+    }
+
+    @media (max-width: 640px) {
+      .nav-right a { display: none; }
+      .stats { gap: 28px 40px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="/" style="text-decoration: none; color: inherit; display: flex; align-items: center;"><span class="logo"><span class="logo-mark">P</span>PaperStock</span></a>
+    <div class="nav-right">
+      <a href="/feed">Explore</a>
+      <a href="/register">For writers</a>
+      <a href="/feed">For readers</a>
+      <a href="/register" style="text-decoration: none;"><button class="btn-nav">Get started</button></a>
+    </div>
+  </nav>
+
+  <!-- HERO STAGE -->
+  <section class="stage">
+
+    <!-- floating cards (desktop) -->
+    <article class="float-card fc-1">
+      <div class="fc-head"><span class="avatar a-gold">R</span><span class="a-name">Rania</span><span class="a-time">4 min</span></div>
+      <div class="fc-title">The woman who collected silences</div>
+      <div class="fc-snippet">She kept them in jars. A Tuesday afternoon in an empty library, each one labelled in her careful hand.</div>
+      <div class="fc-tags"><span class="tag">surreal</span><span class="tag">flash fiction</span></div>
+    </article>
+
+    <article class="float-card fc-2">
+      <div class="fc-head"><span class="avatar a-rose">J</span><span class="a-name">Jin</span><span class="a-time">4 min</span></div>
+      <div class="fc-title">Eleven seconds</div>
+      <div class="fc-snippet">The world record for holding your breath is twenty-four minutes. Mine is eleven. Here's why that was enough.</div>
+      <div class="fc-tags"><span class="tag">reallife</span><span class="tag">family</span></div>
+    </article>
+
+    <article class="float-card fc-3">
+      <div class="fc-head"><span class="avatar a-sage">M</span><span class="a-name">Maren</span><span class="a-time">6 min</span></div>
+      <div class="fc-title">A room full of clocks</div>
+      <div class="fc-snippet">Every clock showed a different time. My grandmother said that was the point: time is experienced, not agreed on.</div>
+      <div class="fc-tags"><span class="tag">magicalrealism</span><span class="tag">quiet</span></div>
+    </article>
+
+    <article class="float-card fc-4">
+      <div class="fc-head"><span class="avatar a-gold">L</span><span class="a-name">Leo</span><span class="a-time">7 min</span></div>
+      <div class="fc-title">The cartographer's daughter</div>
+      <div class="fc-snippet">She mapped every coastline her father sailed, every bay except the one where he disappeared.</div>
+      <div class="fc-tags"><span class="tag">adventure</span><span class="tag">literary</span></div>
+    </article>
+
+    <article class="float-card fc-5">
+      <div class="fc-head"><span class="avatar a-rose">P</span><span class="a-name">Priya</span><span class="a-time">3 min</span></div>
+      <div class="fc-title">What the tide brought back</div>
+      <div class="fc-snippet">We stopped looking after the third week. The sea rarely gives things back. But that Tuesday, it did.</div>
+      <div class="fc-tags"><span class="tag">grief</span><span class="tag">ocean</span></div>
+    </article>
+
+    <article class="float-card fc-6">
+      <div class="fc-head"><span class="avatar a-sage">U</span><span class="a-name">Utsav</span><span class="a-time">3 min</span></div>
+      <div class="fc-title">Me at the zoo</div>
+      <div class="fc-snippet">The air was thick with stale coffee. Early 2005, three guys staring at a monitor, completely lost.</div>
+      <div class="fc-tags"><span class="tag">founders</span><span class="tag">tech</span></div>
+    </article>
+
+    <!-- centred text -->
+    <div class="pill"><span class="dot"></span> Built for <b>writers</b> &amp; <b>readers</b> alike</div>
+    <h1>Where every story finds <em>its</em> reader.</h1>
+    <p class="sub">PaperStock pairs bite-sized fiction, essays, and true stories with the people most likely to love them. Write, read, or just get lost for a while.</p>
+    <div class="actions">
+      <a href="/feed" style="text-decoration: none;"><button class="btn-primary">Start reading, it's free</button></a>
+      <a href="/post/create" style="text-decoration: none;"><button class="btn-ghost">Share your first story</button></a>
+    </div>
+  </section>
+
+  <!-- mobile card grid -->
+  <div class="mobile-cards">
+    <article class="float-card">
+      <div class="fc-head"><span class="avatar a-gold">R</span><span class="a-name">Rania</span><span class="a-time">4 min</span></div>
+      <div class="fc-title">The woman who collected silences</div>
+      <div class="fc-snippet">She kept them in jars. A Tuesday afternoon in an empty library, each one labelled in her careful hand.</div>
+      <div class="fc-tags"><span class="tag">surreal</span><span class="tag">flash fiction</span></div>
+    </article>
+    <article class="float-card">
+      <div class="fc-head"><span class="avatar a-rose">J</span><span class="a-name">Jin</span><span class="a-time">4 min</span></div>
+      <div class="fc-title">Eleven seconds</div>
+      <div class="fc-snippet">The world record for holding your breath is twenty-four minutes. Mine is eleven. Here's why that was enough.</div>
+      <div class="fc-tags"><span class="tag">reallife</span><span class="tag">family</span></div>
+    </article>
+    <article class="float-card">
+      <div class="fc-head"><span class="avatar a-sage">M</span><span class="a-name">Maren</span><span class="a-time">6 min</span></div>
+      <div class="fc-title">A room full of clocks</div>
+      <div class="fc-snippet">Every clock showed a different time. My grandmother said that was the point.</div>
+      <div class="fc-tags"><span class="tag">magicalrealism</span><span class="tag">quiet</span></div>
+    </article>
+    <article class="float-card">
+      <div class="fc-head"><span class="avatar a-gold">L</span><span class="a-name">Leo</span><span class="a-time">7 min</span></div>
+      <div class="fc-title">The cartographer's daughter</div>
+      <div class="fc-snippet">She mapped every coastline her father sailed, every bay except the one where he disappeared.</div>
+      <div class="fc-tags"><span class="tag">adventure</span><span class="tag">literary</span></div>
+    </article>
+  </div>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="stat"><div class="num">12<span>k</span></div><div class="label">stories shared</div></div>
+    <div class="stat"><div class="num">340<span>k</span></div><div class="label">reads this month</div></div>
+    <div class="stat"><div class="num">5<span>min</span></div><div class="label">average read</div></div>
+    <div class="stat"><div class="num">98<span>%</span></div><div class="label">finish what they start</div></div>
+  </section>
+
+</body>
+</html>

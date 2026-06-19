@@ -8,12 +8,13 @@ plugins {
 
 val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties()
-if (keystorePropertiesFile.exists()) {
+val hasKeystore = keystorePropertiesFile.exists()
+if (hasKeystore) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
 android {
-    namespace = "com.paperstock.app"
+    namespace = "com.loreflow.paperstock"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -26,17 +27,19 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
-    signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String? ?: ""
-            keyPassword = keystoreProperties["keyPassword"] as String? ?: ""
-            storeFile = keystoreProperties["storeFile"]?.let { file(it as String) }
-            storePassword = keystoreProperties["storePassword"] as String? ?: ""
+    if (hasKeystore) {
+        signingConfigs {
+            create("release") {
+                keyAlias     = keystoreProperties["keyAlias"]     as String
+                keyPassword  = keystoreProperties["keyPassword"]  as String
+                storeFile    = keystorePropertiesFile.parentFile.resolve("app/" + (keystoreProperties["storeFile"] as String))
+                storePassword = keystoreProperties["storePassword"] as String
+            }
         }
     }
 
     defaultConfig {
-        applicationId = "com.paperstock.app"
+        applicationId = "com.loreflow.paperstock"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -45,7 +48,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
+            signingConfig = if (hasKeystore) {
                 signingConfigs.getByName("release")
             } else {
                 signingConfigs.getByName("debug")
