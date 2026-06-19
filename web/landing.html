@@ -537,25 +537,29 @@
       const userAgent = window.navigator.userAgent.toLowerCase();
       const isIos = /iphone|ipad|ipod/.test(userAgent);
       const isMac = /macintosh|mac os x/.test(userAgent);
-      const isSafari = userAgent.includes('safari') && !userAgent.includes('crios') && !userAgent.includes('fxios');
+      const isSafari = userAgent.includes('safari') && 
+                       !userAgent.includes('crios') && 
+                       !userAgent.includes('fxios') &&
+                       !userAgent.includes('edgios') &&
+                       !userAgent.includes('opios');
 
       let steps = [];
       if (isIos) {
         if (isSafari) {
-          if (modalTitle) modalTitle.textContent = "Install PaperStock";
-          if (modalSubtitle) modalSubtitle.textContent = "Follow these steps to add PaperStock to your home screen:";
+          if (modalTitle) modalTitle.textContent = "Install on iPhone";
+          if (modalSubtitle) modalSubtitle.innerHTML = "Please use <strong>Safari</strong> to add the app to your home screen:";
           steps = [
-            "Tap the <strong>Share</strong> button at the bottom of Safari (square with an up arrow).",
+            "Tap the <strong>Share</strong> button at the bottom of the screen (the square with an up arrow).",
             "Scroll down the menu and select <strong>'Add to Home Screen'</strong>.",
-            "Tap <strong>'Add'</strong> in the top-right corner to install."
+            "Tap <strong>'Add'</strong> in the top-right corner to complete the installation."
           ];
         } else {
           if (modalTitle) modalTitle.textContent = "Safari Required";
-          if (modalSubtitle) modalSubtitle.innerHTML = "iOS only allows adding apps to the home screen using Safari. Please follow these steps:";
+          if (modalSubtitle) modalSubtitle.innerHTML = "To add this app to your home screen, you must open it in <strong>Safari</strong>. Please follow these steps:";
           steps = [
             "Copy the website URL: <strong>https://paperstock.app</strong>",
-            "Open the <strong>Safari</strong> browser app on your iPhone.",
-            "Paste and load the URL in Safari.",
+            "Open the <strong>Safari</strong> app on your iPhone.",
+            "Paste the URL and load the website in Safari.",
             "Tap the <strong>Share</strong> button at the bottom of Safari.",
             "Select <strong>'Add to Home Screen'</strong> from the menu."
           ];
