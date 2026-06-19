@@ -244,38 +244,55 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           final isDesktop = constraints.maxWidth > 1024;
           if (isDesktop) return const SizedBox.shrink();
 
-          final colorScheme = Theme.of(context).colorScheme;
-          return Container(
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              border: Border(
-                top: BorderSide(
-                  color: colorScheme.outlineVariant,
-                  width: 0.5,
+          final theme = Theme.of(context);
+          final colorScheme = theme.colorScheme;
+          return SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: theme.brightness == Brightness.dark
+                      ? coverMid
+                      : cardCreamMid,
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(
+                    color: theme.brightness == Brightness.dark
+                        ? pageEdge
+                        : cardCreamEdge,
+                    width: 0.8,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: theme.brightness == Brightness.dark ? 0.35 : 0.08,
+                      ),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-              ),
-            ),
-            child: SafeArea(
-              top: false,
-              child: SizedBox(
-                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 child: Row(
                   children: <Widget>[
                     _NavItem(
                       icon: Icons.description_outlined,
                       activeIcon: Icons.description,
+                      label: 'Discover',
                       selected: currentIndex == 0,
                       onTap: () => onSelectBottomNav(0),
                     ),
                     _NavItem(
                       icon: Icons.bookmark_border,
                       activeIcon: Icons.bookmark,
+                      label: 'Bookmarks',
                       selected: currentIndex == 1,
                       onTap: () => onSelectBottomNav(1),
                     ),
                     _NavItem(
                       icon: Icons.person_outline,
                       activeIcon: Icons.person,
+                      label: 'Profile',
                       selected: currentIndex == 2,
                       onTap: () => onSelectBottomNav(2),
                     ),
@@ -1209,32 +1226,60 @@ class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.icon,
     required this.activeIcon,
+    required this.label,
     required this.selected,
     required this.onTap,
   });
 
   final IconData icon;
   final IconData activeIcon;
+  final String label;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
+    final fgColor = selected
+        ? colorScheme.primary
+        : colorScheme.onSurfaceVariant.withValues(alpha: 0.65);
+
     return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Icon(
-              selected ? activeIcon : icon,
-              size: 24,
-              color: selected
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant.withValues(alpha: 0.65),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Material(
+          color: selected
+              ? colorScheme.onSurface.withValues(alpha: 0.08)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(24),
+            hoverColor: colorScheme.onSurface.withValues(alpha: 0.04),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Icon(
+                    selected ? activeIcon : icon,
+                    size: 20,
+                    color: fgColor,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    label,
+                    style: GoogleFonts.inter(
+                      fontSize: 10.5,
+                      fontWeight: selected ? FontWeight.bold : FontWeight.w500,
+                      color: fgColor,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
