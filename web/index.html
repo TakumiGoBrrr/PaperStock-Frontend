@@ -35,7 +35,7 @@
 
   <script>
     (function () {
-      var theme = localStorage.getItem('theme_mode');
+      var theme = localStorage.getItem('flutter.theme_mode');
       var isDark = theme !== 'light';
 
       // Keep the initial loading screen matching the theme
@@ -47,14 +47,14 @@
       var style = document.createElement('style');
       style.innerHTML =
         'html, body#app-body { background-color: ' + bg + ' !important; }\n' +
-        '#loading { color: ' + fg + ' !important; }';
+        '#loading { color: ' + fg + ' !important; background-color: ' + bg + ' !important; }';
       document.head.appendChild(style);
     })();
   </script>
 </head>
 <body style="background-color: #16140f;" id="app-body">
   <script>
-    const theme = localStorage.getItem('theme_mode');
+    const theme = localStorage.getItem('flutter.theme_mode');
     const isDark = theme !== 'light';
     document.body.style.backgroundColor = isDark ? '#16140f' : '#FAF6EE';
   </script>
@@ -66,9 +66,12 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: transparent;
+      background-color: #16140f;
       font: 700 28px ui-serif, Georgia, serif;
       letter-spacing: 0.2px;
+      z-index: 99999;
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
     }
   </style>
 
@@ -77,7 +80,13 @@
   <script>
     window.addEventListener('flutter-first-frame', function () {
       var el = document.getElementById('loading');
-      if (el) el.remove();
+      if (el) {
+        el.style.pointerEvents = 'none';
+        el.style.opacity = '0';
+        setTimeout(function() {
+          el.remove();
+        }, 500);
+      }
     });
   </script>
 
