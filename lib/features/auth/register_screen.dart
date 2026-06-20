@@ -492,6 +492,14 @@ void _showTimeoutBanner(BuildContext context, String message) {
   scaffoldMessenger.clearMaterialBanners();
   scaffoldMessenger.showMaterialBanner(
     MaterialBanner(
+      padding: EdgeInsets.only(
+        top: MediaQuery.of(context).padding.top > 0
+            ? MediaQuery.of(context).padding.top + 8.0
+            : 16.0,
+        bottom: 12.0,
+        left: 16.0,
+        right: 8.0,
+      ),
       content: Text(
         message,
         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
