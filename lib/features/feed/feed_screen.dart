@@ -433,7 +433,7 @@ class _BookmarksTabState extends ConsumerState<_BookmarksTab> {
   Map<String, dynamic>? _lastReadPost;
   bool _isLastReadLoading = false;
 
-  Future<void> _switchBookmarkPart(int index, String oldPostId, String newPostId) async {
+  Future<void> _switchBookmarkPart(String oldPostId, String newPostId) async {
     if (_swappingIds.contains(oldPostId) || _swappingIds.contains(newPostId)) return;
 
     setState(() {
@@ -465,7 +465,10 @@ class _BookmarksTabState extends ConsumerState<_BookmarksTab> {
 
       // 3. Update the item in the list
       setState(() {
-        _items[index] = newBmItem;
+        final idx = _items.indexWhere((x) => x.id == oldPostId);
+        if (idx >= 0) {
+          _items[idx] = newBmItem;
+        }
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -766,19 +769,27 @@ class _BookmarksTabState extends ConsumerState<_BookmarksTab> {
                     (context, index) {
                       final item = _items[index];
                       return Padding(
+                        key: ValueKey<String>('bm-pad-${item.id}'),
                         padding: const EdgeInsets.only(bottom: 14),
                         child: _BmCard(
                           key: ValueKey<String>('bm-${item.id}'),
                           item: item,
                           isLoading: _swappingIds.contains(item.id),
-                          onSwitchPart: (newId) => _switchBookmarkPart(index, item.id, newId),
+                          onSwitchPart: (newId) => _switchBookmarkPart(item.id, newId),
                           onRemove: () async {
-                            setState(() => _items.removeAt(index));
+                            final idx = _items.indexOf(item);
+                            if (idx < 0) return;
+                            setState(() => _items.removeAt(idx));
                             try {
-                              final dio = ref.read(apiClientProvider).dio;
-                              await dio.delete<void>('/api/v1/bookmarks/${item.id}');
+                              final repo = ref.read(feedRepositoryProvider);
+                              await repo.removeBookmark(postId: item.id);
                             } catch (_) {
-                              if (mounted) setState(() => _items.insert(index, item));
+                              if (mounted) {
+                                setState(() {
+                                  final reInsertIdx = idx.clamp(0, _items.length);
+                                  _items.insert(reInsertIdx, item);
+                                });
+                              }
                             }
                           },
                         ),
