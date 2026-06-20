@@ -333,6 +333,8 @@ void _debugLogRequest(String method, String path, Map<String, dynamic> body) {
 String _messageFromDio(DioException e) {
   final data = e.response?.data;
   if (data is Map<String, dynamic>) {
+    final error = data['error'];
+    if (error is String && error.trim().isNotEmpty) return error;
     final detail = data['detail'];
     if (detail is String && detail.trim().isNotEmpty) return detail;
     final msg = data['message'];
@@ -343,6 +345,8 @@ String _messageFromDio(DioException e) {
     try {
       final decoded = jsonDecode(data);
       if (decoded is Map<String, dynamic>) {
+        final error = decoded['error'];
+        if (error is String && error.trim().isNotEmpty) return error;
         final detail = decoded['detail'];
         if (detail is String && detail.trim().isNotEmpty) return detail;
       }
