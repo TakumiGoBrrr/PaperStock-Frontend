@@ -17,7 +17,9 @@ merge into **`main`** and push.
 
 ## Run / build
 - `flutter pub get`, `flutter run`, `flutter analyze` (keep it clean before committing).
-- Web: `flutter build web`. APK: `flutter build apk`. Deploy is manual — publish the web build to the server web root `/var/www/paperstock` (backend repo's `deploy_backend.py` does NOT touch the frontend).
+- **Web: always `flutter build web --release --pwa-strategy=none`.** The service worker is intentionally disabled — it caused stale builds on iOS web-clips that plain reloads couldn't clear. APK: `flutter build apk`. Deploy is manual — publish the web build to the server web root `/var/www/paperstock` (backend repo's `deploy_backend.py` does NOT touch the frontend).
+- `web/flutter_service_worker.js` is a **kill-switch** worker (not Flutter's). `--pwa-strategy=none` won't copy it into `build/web`, so after building, copy it in (`cp web/flutter_service_worker.js build/web/`) before uploading. It makes any device still running an old Flutter service worker clear its caches, unregister, and reload.
+- nginx serves the web root with `Cache-Control: no-cache` (revalidate every load) since there's no SW caching layer — keep that header if you touch the nginx config.
 
 ## Question of the Day (`features/qotd/`)
 - "Daily" tab: question header → answer composer (deck of others' answers loads only after you answer) → swipe deck (right=heart, left=skip) → "Challenge a friend" (`share_plus` → deep link `…/q/{id}?ref={myUid}`).
