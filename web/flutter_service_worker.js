@@ -13,26 +13,14 @@ self.addEventListener('install', function (event) {
 
 self.addEventListener('activate', function (event) {
   event.waitUntil((async function () {
-    // 1. Delete every cache the old worker created.
+    // Delete every cache the old worker created, then remove the registration.
+    // Deliberately does NOT call clients.navigate()/reload — forcing a reload
+    // from here causes a refresh loop. The fresh, worker-free build loads on
+    // the next normal navigation; after unregister, no worker remains.
     try {
       const keys = await caches.keys();
       await Promise.all(keys.map(function (k) { return caches.delete(k); }));
     } catch (_) {}
-    // 2. Take control of all open pages so we can reload them.
-    try { await self.clients.claim(); } catch (_) {}
-    // 3. Remove this (and the old) registration entirely.
     try { await self.registration.unregister(); } catch (_) {}
-    // 4. Hard-reload every open window onto the fresh, worker-free build.
-    try {
-      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      for (const client of clients) {
-        client.navigate(client.url);
-      }
-    } catch (_) {}
   })());
-});
-
-// If a controlled page asks (belt-and-suspenders), also reload on message.
-self.addEventListener('message', function (event) {
-  if (event.data === 'check-update') self.registration.update();
 });
