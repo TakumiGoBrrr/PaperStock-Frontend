@@ -74,6 +74,22 @@
         var p = window.__deferredPrompt;
         if (p) { p.prompt(); window.__deferredPrompt = null; }
       };
+      // Platform hint for the manual install instructions shown when the native
+      // prompt isn't available (mirrors landing.html's install modal).
+      window.__installPlatform = function () {
+        try {
+          var ua = window.navigator.userAgent.toLowerCase();
+          var isIos = /iphone|ipad|ipod/.test(ua) ||
+                      (/macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+          var isMac = /macintosh|mac os x/.test(ua);
+          var isSafari = ua.indexOf('safari') !== -1 &&
+                         ua.indexOf('crios') === -1 && ua.indexOf('fxios') === -1 &&
+                         ua.indexOf('edgios') === -1 && ua.indexOf('opios') === -1;
+          if (isIos) return isSafari ? 'ios-safari' : 'ios-other';
+          if (isMac && !/chrome|chromium|crios/.test(ua)) return 'mac-safari';
+          return 'other';
+        } catch (e) { return 'other'; }
+      };
     })();
   </script>
   <style>

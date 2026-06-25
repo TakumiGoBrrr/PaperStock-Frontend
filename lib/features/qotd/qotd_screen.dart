@@ -94,7 +94,9 @@ class _QotdBody extends ConsumerWidget {
       );
     } else {
       // Approved → banner stuck to top + the answer deck below.
-      final deckArea = state.deck.isEmpty ? _DeckEmptyView(state: state) : _AnswerDeck(deck: state.deck);
+      final deckArea = state.deck.isEmpty
+          ? _DeckEmptyView(state: state)
+          : _AnswerDeck(deck: state.deck, rewindDir: state.rewindFromDir);
       content = _RiseIn(
         key: ValueKey('ans-${state.question!.id}'),
         child: Column(
@@ -131,6 +133,16 @@ class _QotdBody extends ConsumerWidget {
     return Stack(
       children: <Widget>[
         sized,
+        // Floating rewind affordance. Lives at the screen level so it's reachable
+        // from any state the last swipe could have landed on - including a gated
+        // next-day card after an auto-advance.
+        if (state.canUndo)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 108,
+            child: Center(child: _UndoButton(onTap: () => c.undoSwipe())),
+          ),
         if (state.isNavigating)
           const Positioned.fill(
             child: ColoredBox(
@@ -139,6 +151,39 @@ class _QotdBody extends ConsumerWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Small floating pill that rewinds the last answer swipe.
+class _UndoButton extends StatelessWidget {
+  const _UndoButton({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Material(
+      color: cs.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(24),
+      elevation: 3,
+      shadowColor: Colors.black.withValues(alpha: 0.25),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Icon(Icons.undo_rounded, size: 17, color: cs.primary),
+              const SizedBox(width: 6),
+              Text('Undo',
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: cs.onSurface)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -771,8 +816,12 @@ class _PendingReviewCard extends ConsumerWidget {
 // ─── Answer deck (vertical: lift-up + rise-from-bottom) ──────────────────────────
 
 class _AnswerDeck extends ConsumerStatefulWidget {
-  const _AnswerDeck({required this.deck});
+  const _AnswerDeck({required this.deck, this.rewindDir});
   final List<Answer> deck;
+
+  /// When set ('right'/'left'), the top card was just restored by an undo and
+  /// should animate back IN from that side.
+  final String? rewindDir;
 
   @override
   ConsumerState<_AnswerDeck> createState() => _AnswerDeckState();
@@ -785,8 +834,12 @@ class _AnswerDeckState extends ConsumerState<_AnswerDeck> with TickerProviderSta
   Answer? _outgoing;
   String _dir = 'left';
 
+  bool _rewinding = false;
+  String _rewindDir = 'left';
+
   late final AnimationController _ctrl; // exit/enter
   late final AnimationController _snap; // snap-back
+  late final AnimationController _rewindCtrl; // undo: card flies back in
   late Animation<double> _snapAnim;
 
   @override
@@ -796,7 +849,15 @@ class _AnswerDeckState extends ConsumerState<_AnswerDeck> with TickerProviderSta
       ..addStatusListener(_onEnd);
     _snap = AnimationController(vsync: this, duration: const Duration(milliseconds: 260))
       ..addListener(() => setState(() => _dragX = _snapAnim.value));
+    _rewindCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 420))
+      ..addListener(() => setState(() {}))
+      ..addStatusListener((s) {
+        if (s == AnimationStatus.completed) setState(() => _rewinding = false);
+      });
     _snapAnim = const AlwaysStoppedAnimation<double>(0);
+    // A freshly built deck (e.g. an undo that switched from the empty view) may
+    // already carry a rewind hint.
+    if (widget.rewindDir != null) _startRewind(widget.rewindDir!);
   }
 
   @override
@@ -805,7 +866,18 @@ class _AnswerDeckState extends ConsumerState<_AnswerDeck> with TickerProviderSta
       ..removeStatusListener(_onEnd)
       ..dispose();
     _snap.dispose();
+    _rewindCtrl.dispose();
     super.dispose();
+  }
+
+  void _startRewind(String dir) {
+    _transitioning = false;
+    _awaitingDeckUpdate = false;
+    _outgoing = null;
+    _dragX = 0;
+    _rewinding = true;
+    _rewindDir = dir;
+    _rewindCtrl.forward(from: 0);
   }
 
   void _onEnd(AnimationStatus status) {
@@ -823,9 +895,16 @@ class _AnswerDeckState extends ConsumerState<_AnswerDeck> with TickerProviderSta
   @override
   void didUpdateWidget(covariant _AnswerDeck old) {
     super.didUpdateWidget(old);
-    if (!_awaitingDeckUpdate) return;
     final oldTop = old.deck.isNotEmpty ? old.deck.first.id : null;
     final newTop = widget.deck.isNotEmpty ? widget.deck.first.id : null;
+
+    // An undo restored a (different) card on top with a rewind hint - fly it in.
+    if (widget.rewindDir != null && newTop != null && newTop != oldTop) {
+      _startRewind(widget.rewindDir!);
+      return;
+    }
+
+    if (!_awaitingDeckUpdate) return;
     if (newTop != oldTop) {
       // New deck arrived → safe to return to idle on the new top card.
       _awaitingDeckUpdate = false;
@@ -872,6 +951,28 @@ class _AnswerDeckState extends ConsumerState<_AnswerDeck> with TickerProviderSta
       builder: (context, constraints) {
         final h = constraints.maxHeight;
         final w = constraints.maxWidth;
+
+        if (_rewinding) {
+          // Undo: the restored card flies back IN from the side it left while
+          // the card behind it (the one that had become top) sits still.
+          return AnimatedBuilder(
+            animation: _rewindCtrl,
+            builder: (_, __) {
+              final t = Curves.easeOutCubic.transform(_rewindCtrl.value);
+              final sign = _rewindDir == 'right' ? 1.0 : -1.0;
+              final dx = sign * w * 1.4 * (1 - t);
+              return Stack(
+                children: <Widget>[
+                  if (next != null) _AnswerCard(answer: next),
+                  Transform.translate(
+                    offset: Offset(dx, 0),
+                    child: Transform.rotate(angle: dx * 0.0010, child: _AnswerCard(answer: top)),
+                  ),
+                ],
+              );
+            },
+          );
+        }
 
         if (_transitioning) {
           return AnimatedBuilder(

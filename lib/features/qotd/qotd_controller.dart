@@ -34,6 +34,8 @@ class QotdState {
     required this.isToday,
     required this.isSubmitting,
     required this.isNavigating,
+    required this.canUndo,
+    this.rewindFromDir,
   });
 
   final Question? question;
@@ -55,6 +57,15 @@ class QotdState {
 
   /// True while loading a different question (chain navigation).
   final bool isNavigating;
+
+  /// True when the most recent answer swipe can be rewound.
+  final bool canUndo;
+
+  /// Transient one-shot hint set right after an undo so the deck can animate the
+  /// restored card back IN from the side it left ('right'/'left'). Null normally;
+  /// any subsequent state update clears it. Only set for same-question undos -
+  /// cross-day undos are carried by the question-change entrance animation.
+  final String? rewindFromDir;
 
   bool get hasQuestion => question != null;
   bool get hasAnswered => myAnswer != null;
@@ -83,6 +94,8 @@ class QotdState {
     bool? isToday,
     bool? isSubmitting,
     bool? isNavigating,
+    bool? canUndo,
+    String? rewindFromDir, // transient: reset to null unless explicitly passed
   }) {
     return QotdState(
       question: question ?? this.question,
@@ -97,6 +110,8 @@ class QotdState {
       isToday: isToday ?? this.isToday,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       isNavigating: isNavigating ?? this.isNavigating,
+      canUndo: canUndo ?? this.canUndo,
+      rewindFromDir: rewindFromDir,
     );
   }
 
@@ -113,13 +128,30 @@ class QotdState {
     isToday: true,
     isSubmitting: false,
     isNavigating: false,
+    canUndo: false,
   );
 }
 
 // ─── Controller ───────────────────────────────────────────────────────────────
 
+/// One rewindable swipe: the full state as it was just before the swipe, plus
+/// which answer was swiped and in which direction.
+class _UndoEntry {
+  const _UndoEntry(this.stateBefore, this.answerId, this.direction);
+  final QotdState stateBefore;
+  final String answerId;
+  final String direction;
+}
+
 class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
   final Set<String> _swipedThisSession = <String>{};
+
+  // Rewind history: a full pre-swipe state snapshot per swipe, most-recent last.
+  // Each undo restores the snapshot (jumping back across days if the swipe was
+  // the last card that auto-advanced). The stack lives only for this controller
+  // instance - leaving the Daily tab disposes it (auto-dispose) and closing the
+  // app drops it, so undo never survives leaving the page.
+  final List<_UndoEntry> _undoStack = <_UndoEntry>[];
 
   // Previous (older) question fetched ahead of time so that, when the current
   // deck is exhausted, we can rise straight into it without a loading gap or an
@@ -153,6 +185,9 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
       isToday: d.isToday,
       isSubmitting: false,
       isNavigating: false,
+      // The rewind history outlives day changes, so a swipe that auto-advanced
+      // (or any navigation afterwards) keeps the undo affordance available.
+      canUndo: _undoStack.isNotEmpty,
     );
   }
 
@@ -165,6 +200,7 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
 
   @override
   Future<QotdState> build() async {
+    _undoStack.clear(); // fresh start on (re)build, e.g. after refresh()
     final repo = ref.watch(qotdRepositoryProvider);
     try {
       final today = await repo.getToday();
@@ -267,6 +303,9 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
     if (index < 0) return;
 
     _swipedThisSession.add(answerId);
+    // Snapshot the pre-swipe state (cleaned of any transient rewind hint) so the
+    // swipe can be rewound later - even after auto-advancing to another day.
+    _undoStack.add(_UndoEntry(current.copyWith(), answerId, direction));
     final newDeck = List<Answer>.of(current.deck)..removeAt(index);
     // Auto-advance targets the previous day that still has UNSEEN answers.
     final prevId = current.prevUnseenQuestionId;
@@ -297,7 +336,7 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
       return;
     }
 
-    state = AsyncData(current.copyWith(deck: newDeck));
+    state = AsyncData(current.copyWith(deck: newDeck, canUndo: true));
 
     // Fallback (prefetch not ready): load the previous unseen question.
     if (newDeck.isEmpty) {
@@ -309,6 +348,35 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
     if (newDeck.length <= 3 && current.question != null) {
       _refillDeck(questionId: current.question!.id, currentDeck: newDeck);
     }
+  }
+
+  /// Rewind the most recent answer swipe. Restores the exact pre-swipe state -
+  /// which jumps back to the previous day if that swipe was the last card and we
+  /// auto-advanced. The restored card lands back on top.
+  Future<void> undoSwipe() async {
+    final current = state.valueOrNull;
+    if (current == null || _undoStack.isEmpty) return;
+
+    final entry = _undoStack.removeLast();
+    _swipedThisSession.remove(entry.answerId);
+
+    final before = entry.stateBefore;
+    final sameQuestion = current.question?.id == before.question?.id;
+
+    state = AsyncData(before.copyWith(
+      canUndo: _undoStack.isNotEmpty,
+      // Same-day undo: animate the card back in from the side it left. Cross-day
+      // undo changes the question, so the entrance animation covers it instead.
+      rewindFromDir: sameQuestion ? entry.direction : null,
+    ));
+    // Re-line-up the prefetched previous question for the restored state.
+    _prefetchPrev(before.prevUnseenQuestionId);
+
+    // Best-effort: tell the server to forget the swipe so the card isn't
+    // filtered out of future decks and any heart is withdrawn.
+    try {
+      await ref.read(qotdRepositoryProvider).undoSwipe();
+    } catch (_) {}
   }
 
   Future<void> _refillDeck({required String questionId, required List<Answer> currentDeck}) async {

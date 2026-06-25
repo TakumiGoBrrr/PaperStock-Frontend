@@ -105,6 +105,14 @@ class QotdRepository {
     );
   }
 
+  /// Undoes the caller's most recent answer swipe. Returns the answer id that
+  /// was un-swiped, or null if there was nothing to undo.
+  Future<String?> undoSwipe() async {
+    final response = await _dio.delete<Map<String, dynamic>>('/api/v1/qotd/swipe/undo');
+    final body = response.data ?? const <String, dynamic>{};
+    return body['undone_answer_id']?.toString();
+  }
+
   Future<void> reportAnswer({
     required String answerId,
     required String reason,
