@@ -27,6 +27,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   bool _isSaving = false;
   String? _error;
 
+  // ISO date (YYYY-MM-DD) the name is locked until, or null if changeable now.
+  String? _nameLockedUntil;
+  bool get _nameLocked => _nameLockedUntil != null;
+
   String? _myId;
   List<String> _suggested = const <String>[];
   final Set<String> _selected = <String>{};
@@ -57,6 +61,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final id = (data['id'] as Object?)?.toString();
       final displayName = (data['display_name'] as Object?)?.toString();
       final bio = (data['bio'] as Object?)?.toString();
+      final nameAvailableOn = (data['name_change_available_on'] as Object?)?.toString();
 
       final interestsJson = (data['interests'] is List)
           ? (data['interests'] as List)
@@ -70,6 +75,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       if (!mounted) return;
 
       _myId = (id == null || id.isEmpty) ? null : id;
+      _nameLockedUntil = (nameAvailableOn == null || nameAvailableOn.isEmpty) ? null : nameAvailableOn;
       _displayNameController.text = (displayName ?? '').trim();
       _bioController.text = (bio ?? '').trim();
       _selected
@@ -257,9 +263,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                     const SizedBox(height: 16),
                                     TextFormField(
                                       controller: _displayNameController,
+                                      enabled: !_nameLocked,
                                       textInputAction: TextInputAction.next,
-                                      decoration: const InputDecoration(
+                                      decoration: InputDecoration(
                                         labelText: 'Display name',
+                                        helperMaxLines: 2,
+                                        helperText: _nameLocked
+                                            ? 'You can change your name again on ${_formatDate(_nameLockedUntil!)}.'
+                                            : 'You can only change your name once every 6 months.',
                                       ),
                                     ),
                                     const SizedBox(height: 12),
@@ -368,6 +379,16 @@ class _ErrorView extends StatelessWidget {
       ),
     );
   }
+}
+
+String _formatDate(String iso) {
+  final d = DateTime.tryParse(iso);
+  if (d == null) return iso;
+  const months = <String>[
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
+  return '${months[d.month - 1]} ${d.day}, ${d.year}';
 }
 
 String _normalizeTag(String input) {
