@@ -23,6 +23,7 @@ import '../../features/profile/history_screen.dart';
 import '../../features/profile/interests_screen.dart';
 import '../../features/profile/profile_screen.dart';
 import '../../features/profile/recycle_bin_screen.dart';
+import '../../features/qotd/qotd_controller.dart';
 import '../../features/swipe/swipe_demo_screen.dart';
 import '../../features/swipe/story_ad_screen.dart';
 import '../../features/profile/settings_screen.dart';
@@ -72,6 +73,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           (token != null && token.isNotEmpty);
 
       final path = state.uri.path;
+
+      // Shared QOTD link landed on the web app as `/?q={id}&ref={uid}`.
+      // Route it to the deep-link handler (which redeems + opens the Daily tab).
+      final qParam = state.uri.queryParameters['q'];
+      if (qParam != null &&
+          qParam.isNotEmpty &&
+          (path == '/' || path == '/home' || path == '/feed')) {
+        if (!isLoggedIn) return '/login';
+        final refParam = state.uri.queryParameters['ref'];
+        return '/q/$qParam${refParam != null && refParam.isNotEmpty ? '?ref=$refParam' : ''}';
+      }
+
       if (path == '/' || path == '/home') return '/feed';
 
       final isAuthRoute = path == '/login' ||
@@ -200,6 +213,27 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return _fadeScalePage(
             state: state,
             child: const FeedScreen(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/qotd',
+        pageBuilder: (BuildContext context, GoRouterState state) {
+          return _fadeScalePage(
+            state: state,
+            child: const _QotdEntryScreen(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/q/:id',
+        pageBuilder: (BuildContext context, GoRouterState state) {
+          return _fadeScalePage(
+            state: state,
+            child: _QotdEntryScreen(
+              questionId: state.pathParameters['id'],
+              ref: state.uri.queryParameters['ref'],
+            ),
           );
         },
       ),
@@ -355,5 +389,47 @@ class _RouterRefreshNotifier extends ChangeNotifier {
   void dispose() {
     _sub.close();
     super.dispose();
+  }
+}
+
+/// Handles `/qotd` and shared `/q/:id?ref=` deep links: records challenge
+/// attribution (best-effort) and opens the feed shell on the "Daily" tab.
+class _QotdEntryScreen extends ConsumerStatefulWidget {
+  const _QotdEntryScreen({this.questionId, this.ref});
+
+  final String? questionId;
+  final String? ref;
+
+  @override
+  ConsumerState<_QotdEntryScreen> createState() => _QotdEntryScreenState();
+}
+
+class _QotdEntryScreenState extends ConsumerState<_QotdEntryScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Open the Daily tab inside the feed shell.
+      ref.read(bottomNavIndexProvider.notifier).state = 1;
+
+      // Best-effort challenge attribution.
+      final qid = widget.questionId;
+      final refUid = widget.ref;
+      if (qid != null && qid.isNotEmpty && refUid != null && refUid.isNotEmpty) {
+        await ref
+            .read(qotdRepositoryProvider)
+            .redeemChallenge(questionId: qid, ref: refUid);
+        ref.invalidate(qotdControllerProvider);
+      }
+
+      if (mounted) context.go('/feed');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
+    );
   }
 }

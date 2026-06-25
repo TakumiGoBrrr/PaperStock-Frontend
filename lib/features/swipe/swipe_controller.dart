@@ -61,6 +61,12 @@ class SwipeDeckState {
 // ─── Controller ───────────────────────────────────────────────────────────────
 
 class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
+  /// IDs swiped during this session. The server records swipes asynchronously,
+  /// so a low-deck refill can fire its `GET /deck` before the swipe is
+  /// persisted — without this guard the backend would hand the just-swiped
+  /// story straight back and the card would reappear.
+  final Set<String> _swipedThisSession = <String>{};
+
   List<Post> _mergeStoriesAndAds(List<Post> stories, List<Post> ads) {
     if (ads.isEmpty) return stories;
     final result = <Post>[];
@@ -118,6 +124,10 @@ class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
 
     final swiped = current.deck[index];
     final newDeck = List<Post>.of(current.deck)..removeAt(index);
+
+    // Remember it so a concurrent refill can't re-add it before the server
+    // has recorded the swipe.
+    _swipedThisSession.add(swiped.id);
 
     // Optimistic update — card is already off screen
     state = AsyncData(
@@ -236,6 +246,9 @@ class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
     final lastSwiped = current.lastSwiped;
     if (lastSwiped == null) return;
 
+    // Allow the restored card back into future refills.
+    _swipedThisSession.remove(lastSwiped.id);
+
     // Optimistically restore the card
     final newDeck = <Post>[lastSwiped, ...current.deck];
     state = AsyncData(
@@ -269,8 +282,14 @@ class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
       final page = await repo.getDeck(limit: 20);
       final ads = await repo.getActiveAds();
 
-      final existingIds = currentDeck.map((p) => p.id).toSet();
-      final fresh = page.stories.where((p) => !existingIds.contains(p.id)).toList();
+      // Exclude cards already in the deck AND anything swiped this session —
+      // the server may not have recorded the most recent swipes yet.
+      final latestDeck = state.valueOrNull?.deck ?? currentDeck;
+      final existingIds = latestDeck.map((p) => p.id).toSet();
+      final fresh = page.stories
+          .where((p) =>
+              !existingIds.contains(p.id) && !_swipedThisSession.contains(p.id))
+          .toList();
       final merged = _mergeStoriesAndAds(fresh, ads);
 
       final latest = state.valueOrNull;
@@ -330,6 +349,7 @@ class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
   }
 
   Future<void> clearAllSwipes() async {
+    _swipedThisSession.clear();
     state = const AsyncLoading();
     try {
       final repo = ref.read(swipeRepositoryProvider);

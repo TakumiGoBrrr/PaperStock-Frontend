@@ -307,8 +307,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       _tagsError = null;
 
       for (final t in next) {
-        if (_tags.length >= 5) {
-          _tagsError = 'Up to 5 tags allowed';
+        if (_tags.length >= 10) {
+          _tagsError = 'Up to 10 tags allowed';
           break;
         }
         if (_tags.contains(t)) continue;
@@ -332,8 +332,8 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
   void _addTrendingTag(String tag) {
     if (_tags.contains(tag)) return;
-    if (_tags.length >= 5) {
-      setState(() => _tagsError = 'Up to 5 tags allowed');
+    if (_tags.length >= 10) {
+      setState(() => _tagsError = 'Up to 10 tags allowed');
       return;
     }
     setState(() {
@@ -698,7 +698,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                         style: TextStyle(color: colorScheme.onSurface),
                         decoration: InputDecoration(
                           labelText: 'Tags',
-                          helperText: 'Add 1–5 tags (max 20 chars each)',
+                          helperText: 'Add 1–10 tags (max 20 chars each)',
                           errorText: _tagsError,
                           filled: true,
                           fillColor: fieldFillColor,
@@ -717,7 +717,7 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          '${_tags.length}/5',
+                          '${_tags.length}/10',
                           style: theme.textTheme.labelMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
