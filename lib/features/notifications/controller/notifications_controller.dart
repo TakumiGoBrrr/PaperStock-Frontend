@@ -163,7 +163,7 @@ class NotificationsController extends AsyncNotifier<NotificationsState> {
       ..removeAt(idx);
     state = AsyncData(current.copyWith(items: optimisticItems));
 
-    // Already read — no API call needed, just remove from list.
+    // Already read - no API call needed, just remove from list.
     if (before.isRead) {
       _markReadInFlight.remove(notificationId);
       return;

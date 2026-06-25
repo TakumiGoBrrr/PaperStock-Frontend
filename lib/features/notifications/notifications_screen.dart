@@ -364,7 +364,7 @@ String _subtitleFor(AppNotification n) {
   }
   if (n.type == 'qotd_challenge' || n.type == 'qotd_new') {
     if ((n.questionPrompt ?? '').isNotEmpty) {
-      return '"${n.questionPrompt}" — tap to answer.';
+      return '"${n.questionPrompt}" - tap to answer.';
     }
     return 'Tap to answer today\'s question.';
   }

@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Community guidelines shown:
 ///  - as a gated onboarding step right after the swipe tutorial
-///    (`isOnboarding: true` — the user must scroll to the bottom and tick the
+///    (`isOnboarding: true` - the user must scroll to the bottom and tick the
 ///    agreement box before continuing), and
 ///  - as a reference page opened from a rejected post (`isOnboarding: false`).
 class CommunityGuidelinesScreen extends StatefulWidget {

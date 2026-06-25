@@ -6,7 +6,7 @@ import '../../features/notifications/controller/notifications_controller.dart';
 
 /// A notification bell icon button that automatically shows a badge
 /// when there are unread notifications. Can be dropped anywhere in the
-/// widget tree — it manages its own Riverpod access internally.
+/// widget tree - it manages its own Riverpod access internally.
 class NotificationBellButton extends ConsumerWidget {
   const NotificationBellButton({super.key});
 

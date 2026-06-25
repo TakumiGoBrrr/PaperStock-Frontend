@@ -30,7 +30,7 @@ class HistoryScreen extends ConsumerStatefulWidget {
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   final Map<String, Future<Post?>> _futureById = <String, Future<Post?>>{};
 
-  // Mutable interaction state — initialised once the post future resolves.
+  // Mutable interaction state - initialised once the post future resolves.
   final Map<String, bool> _isLikedById = <String, bool>{};
   final Map<String, bool> _isBookmarkedById = <String, bool>{};
   final Set<String> _likeInFlight = <String>{};

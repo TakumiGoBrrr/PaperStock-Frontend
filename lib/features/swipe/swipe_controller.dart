@@ -30,7 +30,7 @@ class SwipeDeckState {
   /// Cards still to show. Index 0 is the top card.
   final List<Post> deck;
 
-  /// The most recently swiped post — used by undo to re-insert it.
+  /// The most recently swiped post - used by undo to re-insert it.
   final Post? lastSwiped;
 
   /// True while a background refill is in progress.
@@ -63,7 +63,7 @@ class SwipeDeckState {
 class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
   /// IDs swiped during this session. The server records swipes asynchronously,
   /// so a low-deck refill can fire its `GET /deck` before the swipe is
-  /// persisted — without this guard the backend would hand the just-swiped
+  /// persisted - without this guard the backend would hand the just-swiped
   /// story straight back and the card would reappear.
   final Set<String> _swipedThisSession = <String>{};
 
@@ -98,7 +98,7 @@ class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
         isFetchingMore: false,
       );
     } on DioException catch (e) {
-      // 401 means the auth guard will redirect to login — don't crash the UI.
+      // 401 means the auth guard will redirect to login - don't crash the UI.
       final status = e.response?.statusCode;
       if (status == 401 || status == 403) {
         return SwipeDeckState.empty;
@@ -129,7 +129,7 @@ class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
     // has recorded the swipe.
     _swipedThisSession.add(swiped.id);
 
-    // Optimistic update — card is already off screen
+    // Optimistic update - card is already off screen
     state = AsyncData(
       current.copyWith(
         deck: newDeck,
@@ -150,7 +150,7 @@ class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
       repo.recordAdImpression(realAdId);
 
       if (direction == 'up' && swiped.adTargetUrl != null) {
-        // Swipe up acts as "Learn More" — a click redirect.
+        // Swipe up acts as "Learn More" - a click redirect.
         repo.recordAdClick(realAdId);
         try {
           final uri = Uri.parse(swiped.adTargetUrl!);
@@ -162,7 +162,7 @@ class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
       return;
     }
 
-    // Fire-and-forget API call — swipe is already recorded locally
+    // Fire-and-forget API call - swipe is already recorded locally
     try {
       final repo = ref.read(swipeRepositoryProvider);
       await repo.recordSwipe(storyId: storyId, direction: direction);
@@ -239,7 +239,7 @@ class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
     }
   }
 
-  /// Undo the most recent swipe — puts the card back on top of the deck.
+  /// Undo the most recent swipe - puts the card back on top of the deck.
   Future<void> undo() async {
     final current = state.valueOrNull;
     if (current == null) return;
@@ -282,7 +282,7 @@ class SwipeDeckController extends AutoDisposeAsyncNotifier<SwipeDeckState> {
       final page = await repo.getDeck(limit: 20);
       final ads = await repo.getActiveAds();
 
-      // Exclude cards already in the deck AND anything swiped this session —
+      // Exclude cards already in the deck AND anything swiped this session -
       // the server may not have recorded the most recent swipes yet.
       final latestDeck = state.valueOrNull?.deck ?? currentDeck;
       final existingIds = latestDeck.map((p) => p.id).toSet();

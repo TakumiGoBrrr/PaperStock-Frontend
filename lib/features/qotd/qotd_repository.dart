@@ -12,7 +12,10 @@ class QotdDetail {
     required this.hasAnswered,
     required this.totalAnswers,
     required this.prevQuestionId,
+    required this.nextQuestionId,
+    required this.prevUnseenQuestionId,
     required this.isFirst,
+    required this.isLast,
     required this.isToday,
   });
 
@@ -21,7 +24,10 @@ class QotdDetail {
   final bool hasAnswered;
   final int totalAnswers;
   final String? prevQuestionId;
+  final String? nextQuestionId;
+  final String? prevUnseenQuestionId;
   final bool isFirst;
+  final bool isLast;
   final bool isToday;
 
   factory QotdDetail.fromJson(Map<String, dynamic> body) {
@@ -38,7 +44,10 @@ class QotdDetail {
       totalAnswers:
           (body['total_answers'] is num) ? (body['total_answers'] as num).toInt() : 0,
       prevQuestionId: body['prev_question_id']?.toString(),
+      nextQuestionId: body['next_question_id']?.toString(),
+      prevUnseenQuestionId: body['prev_unseen_question_id']?.toString(),
       isFirst: body['is_first'] != false, // default true if missing
+      isLast: body['is_last'] != false, // default true if missing
       isToday: body['is_today'] != false, // default true if missing
     );
   }
@@ -80,6 +89,10 @@ class QotdRepository {
       data: <String, dynamic>{'body': body},
     );
     return Answer.fromJson(response.data ?? const <String, dynamic>{});
+  }
+
+  Future<void> deleteAnswer(String answerId) async {
+    await _dio.delete<void>('/api/v1/qotd/answers/$answerId');
   }
 
   Future<void> recordSwipe({

@@ -52,6 +52,30 @@
       document.head.appendChild(style);
     })();
   </script>
+  <script>
+    // PWA install hooks consumed by the Flutter app (see core/pwa/).
+    (function () {
+      window.__deferredPrompt = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__deferredPrompt = e;
+      });
+      window.addEventListener('appinstalled', function () {
+        window.__deferredPrompt = null;
+      });
+      window.__isStandalone = function () {
+        try {
+          return window.matchMedia('(display-mode: standalone)').matches ||
+                 window.navigator.standalone === true;
+        } catch (e) { return false; }
+      };
+      window.__canInstallPWA = function () { return !!window.__deferredPrompt; };
+      window.__promptInstall = function () {
+        var p = window.__deferredPrompt;
+        if (p) { p.prompt(); window.__deferredPrompt = null; }
+      };
+    })();
+  </script>
   <style>
     .ios-prompt-container {
       position: fixed;

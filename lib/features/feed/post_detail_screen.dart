@@ -8,10 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/card_brightness_provider.dart';
 import '../../core/api/api_client_provider.dart';
+import '../../core/api/api_config.dart';
 import '../../core/widgets/nsfw_blur_overlay.dart';
 import '../swipe/swipe_controller.dart';
 import 'controller/post_detail_controller.dart';
@@ -939,10 +941,13 @@ class _ActionsRow extends ConsumerWidget {
       }
     }
 
-    void onShare() {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Share coming soon.')),
-      );
+    Future<void> onShare() async {
+      final title = (post?.title ?? '').trim();
+      final link = '${ApiConfig.baseUrl}/post/$postId';
+      final text = title.isEmpty
+          ? 'Read this story on PaperStock 👉 $link'
+          : 'Read "$title" on PaperStock 👉 $link';
+      await Share.share(text, subject: title.isEmpty ? 'PaperStock' : title);
     }
 
     return Row(
@@ -1366,7 +1371,7 @@ class _PostDetailSkeleton extends StatelessWidget {
   }
 }
 
-/// Shown when a post returns 404 — likely deleted or archived by the author.
+/// Shown when a post returns 404 - likely deleted or archived by the author.
 class _PostUnavailableView extends StatelessWidget {
   const _PostUnavailableView({
     required this.authorId,

@@ -5,7 +5,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 /// Schedules the daily "Question of the Day" reminder as a *local* on-device
-/// notification — no FCM / server push. Android-only: on web (incl. the iOS
+/// notification - no FCM / server push. Android-only: on web (incl. the iOS
 /// web-clip / PWA) and other platforms every method is a safe no-op.
 class LocalNotificationsService {
   LocalNotificationsService._();
