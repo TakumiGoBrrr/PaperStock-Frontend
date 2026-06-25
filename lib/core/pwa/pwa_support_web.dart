@@ -10,6 +10,9 @@ external bool _canInstall();
 @JS('__promptInstall')
 external void _promptInstall();
 
+@JS('__installPlatform')
+external String _installPlatform();
+
 /// True when running as an installed PWA / home-screen web-clip ("app mode").
 bool pwaIsStandalone() {
   try {
@@ -33,4 +36,14 @@ void pwaPromptInstall() {
   try {
     _promptInstall();
   } catch (_) {}
+}
+
+/// Platform hint ('ios-safari', 'ios-other', 'mac-safari', 'other') used to
+/// pick manual install instructions when no native prompt is available.
+String pwaInstallPlatform() {
+  try {
+    return _installPlatform();
+  } catch (_) {
+    return 'other';
+  }
 }

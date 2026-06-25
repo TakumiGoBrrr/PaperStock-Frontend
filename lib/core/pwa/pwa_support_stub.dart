@@ -3,3 +3,4 @@
 bool pwaIsStandalone() => true;
 bool pwaCanInstall() => false;
 void pwaPromptInstall() {}
+String pwaInstallPlatform() => 'other';
