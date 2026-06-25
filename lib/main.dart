@@ -8,7 +8,7 @@ import 'app.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // Clean (path-based) web URLs so query params like ?q=/?ref= survive on the
-  // web build — needed for shared QOTD challenge links. No-op on mobile.
+  // web build - needed for shared QOTD challenge links. No-op on mobile.
   if (kIsWeb) {
     usePathUrlStrategy();
   }

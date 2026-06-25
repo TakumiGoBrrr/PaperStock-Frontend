@@ -23,7 +23,7 @@ const _kCardBorderRadius = 24.0;
 
 final showSwipeTutorialProvider = StateProvider<bool>((ref) => false);
 
-/// Drop-in widget — no Scaffold/AppBar. Embed directly into a tab.
+/// Drop-in widget - no Scaffold/AppBar. Embed directly into a tab.
 class SwipeDeckContent extends ConsumerWidget {
   const SwipeDeckContent({super.key});
 

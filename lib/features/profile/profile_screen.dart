@@ -780,6 +780,7 @@ class _ProfileHeader extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
+            const SizedBox(height: 24),
             Text(
               display,
               style: nameStyle,

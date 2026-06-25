@@ -8,13 +8,13 @@ import '../utils/app_constants.dart';
 // Light mode: warm off-white paper, deep charcoal text.
 
 // ── Dark backgrounds ──────────────────────────────────────────────────────────
-/// Scaffold background — near-black charcoal
+/// Scaffold background - near-black charcoal
 const leatherBrown = Color(0xFF16140F);
 
 /// Card / container surface
 const coverDark = Color(0xFF1E1C16);
 
-/// Elevated surfaces — sheets, dialogs
+/// Elevated surfaces - sheets, dialogs
 const coverMid = Color(0xFF28251C);
 
 /// Higher elevation
@@ -27,7 +27,7 @@ const pageEdge = Color(0xFF3D382A);
 const pageEdgeWarm = Color(0xFF4A4330);
 
 // ── Brand accents ─────────────────────────────────────────────────────────────
-/// Primary accent — warm amber
+/// Primary accent - warm amber
 const spineAccent = Color(0xFFBF8C3A);
 
 /// Mid amber
@@ -36,17 +36,17 @@ const spineMid = Color(0xFFD4A050);
 /// Light amber
 const spineLight = Color(0xFFE8B86D);
 
-/// Gold highlight — super-like, premium
+/// Gold highlight - super-like, premium
 const goldLeaf = Color(0xFFD4A85A);
 
 /// Deep gold
 const goldDeep = Color(0xFFAA8030);
 
 // ── Dark text ─────────────────────────────────────────────────────────────────
-/// Primary — warm cream
+/// Primary - warm cream
 const inkParchment = Color(0xFFF4EDD8);
 
-/// Secondary — muted amber-grey
+/// Secondary - muted amber-grey
 const inkFaded = Color(0xFFAA9A72);
 
 /// Tertiary / disabled
@@ -65,20 +65,20 @@ const _lightOnSurface  = Color(0xFF1C1A14);
 const _lightOnVariant  = Color(0xFF6B6250);
 const _lightPrimary    = Color(0xFF8B6914);
 
-// ─── Story / Swipe Card — same charcoal palette (now unified) ─────────────────
+// ─── Story / Swipe Card - same charcoal palette (now unified) ─────────────────
 // These aliases remain so the card/reading-view code compiles unchanged.
 const cardCharcoalDark    = coverDark;
 const cardCharcoalMid     = coverMid;
 const cardCharcoalEdge    = pageEdge;
-const cardCharcoalText    = Color(0xFFEDE3C8); // lighter cream — dark card title
-const cardCharcoalSubtext = Color(0xFFA89878); // lighter muted amber — dark card body
+const cardCharcoalText    = Color(0xFFEDE3C8); // lighter cream - dark card title
+const cardCharcoalSubtext = Color(0xFFA89878); // lighter muted amber - dark card body
 const cardCharcoalAccent  = spineAccent;
 
 const cardCreamLight   = _lightSurface;
 const cardCreamMid     = _lightCard;
 const cardCreamEdge    = _lightBorder;
-const cardCreamText    = Color(0xFF2A2518); // darker charcoal — light card title
-const cardCreamSubtext = Color(0xFF5A5245); // deeper warm grey — light card body
+const cardCreamText    = Color(0xFF2A2518); // darker charcoal - light card title
+const cardCreamSubtext = Color(0xFF5A5245); // deeper warm grey - light card body
 const cardCreamAccent  = _lightPrimary;
 
 // ─── Legacy aliases ───────────────────────────────────────────────────────────

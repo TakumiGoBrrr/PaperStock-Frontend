@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// Sensitive content (mature themes such as violence or distressing topics) is
 /// shown with a blur and a content warning. This is a viewing preference, not an
-/// age gate — the user simply opts in to revealing it.
+/// age gate - the user simply opts in to revealing it.
 class NsfwConsentStore {
   static const String _keyHasConfirmed = 'sensitive_content_reveal_opt_in';
 

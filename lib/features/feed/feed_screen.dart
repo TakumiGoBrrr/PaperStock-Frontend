@@ -7,6 +7,7 @@ import '../../core/api/api_client_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/card_brightness_provider.dart';
 import '../../core/widgets/app_header.dart';
+import '../../core/widgets/app_install_banner.dart';
 import '../../core/widgets/notification_bell_button.dart';
 import '../../core/widgets/theme_toggle_button.dart';
 import '../profile/controller/profile_controller.dart';
@@ -115,7 +116,11 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       extendBody: true,
-      body: LayoutBuilder(
+      body: Column(
+        children: <Widget>[
+          const AppInstallBanner(),
+          Expanded(
+            child: LayoutBuilder(
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           final isMobile = width < 600;
@@ -243,6 +248,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             ),
           );
         },
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: LayoutBuilder(
         builder: (context, constraints) {
@@ -1289,26 +1297,14 @@ class _NavItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(24),
             hoverColor: colorScheme.onSurface.withValues(alpha: 0.04),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(
-                    selected ? activeIcon : icon,
-                    size: 20,
-                    color: fgColor,
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    label,
-                    style: GoogleFonts.inter(
-                      fontSize: 10.5,
-                      fontWeight: selected ? FontWeight.bold : FontWeight.w500,
-                      color: fgColor,
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
+              child: Tooltip(
+                message: label,
+                child: Icon(
+                  selected ? activeIcon : icon,
+                  size: 22,
+                  color: fgColor,
+                ),
               ),
             ),
           ),

@@ -247,7 +247,7 @@ class FeedController
     final current = state.valueOrNull;
     if (current == null) return;
 
-    // Archived posts don't belong in the public feed — remove optimistically.
+    // Archived posts don't belong in the public feed - remove optimistically.
     final updated = current.items.where((p) => p.id != postId).toList();
     state = AsyncData(current.copyWith(items: updated));
 

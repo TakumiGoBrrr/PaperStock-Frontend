@@ -27,7 +27,10 @@ class QotdState {
     required this.totalAnswers,
     required this.deck,
     required this.prevQuestionId,
+    required this.nextQuestionId,
+    required this.prevUnseenQuestionId,
     required this.isFirst,
+    required this.isLast,
     required this.isToday,
     required this.isSubmitting,
     required this.isNavigating,
@@ -40,24 +43,32 @@ class QotdState {
   /// Other users' answers to the focused question, still to swipe.
   final List<Answer> deck;
 
-  /// The previous day's question id (null when this is the first ever).
-  final String? prevQuestionId;
+  /// Chain links (null at the ends).
+  final String? prevQuestionId; // older (any)
+  final String? nextQuestionId; // newer (any)
+  final String? prevUnseenQuestionId; // older day that still has unseen answers
   final bool isFirst;
+  final bool isLast;
 
-  /// Whether the focused question is today's.
   final bool isToday;
-
   final bool isSubmitting;
 
-  /// True while loading a different day's question (chain navigation).
+  /// True while loading a different question (chain navigation).
   final bool isNavigating;
 
   bool get hasQuestion => question != null;
   bool get hasAnswered => myAnswer != null;
 
-  /// Today's question hides others' answers until you answer; past questions
-  /// are an open reading archive.
-  bool get isGated => isToday && !hasAnswered;
+  String get _answerStatus => myAnswer?.moderationStatus ?? '';
+
+  /// Others' answers are revealed only once YOUR answer is approved - so a
+  /// pending/gibberish answer can't unlock the deck.
+  bool get isUnlocked => _answerStatus == 'approved';
+  bool get isPending => _answerStatus == 'pending';
+  bool get isRejected => _answerStatus == 'rejected';
+
+  /// Show the composer when there's no answer yet, or the last one was rejected.
+  bool get isGated => myAnswer == null || isRejected;
 
   QotdState copyWith({
     Question? question,
@@ -65,8 +76,10 @@ class QotdState {
     int? totalAnswers,
     List<Answer>? deck,
     String? prevQuestionId,
-    bool clearPrev = false,
+    String? nextQuestionId,
+    String? prevUnseenQuestionId,
     bool? isFirst,
+    bool? isLast,
     bool? isToday,
     bool? isSubmitting,
     bool? isNavigating,
@@ -76,8 +89,11 @@ class QotdState {
       myAnswer: myAnswer ?? this.myAnswer,
       totalAnswers: totalAnswers ?? this.totalAnswers,
       deck: deck ?? this.deck,
-      prevQuestionId: clearPrev ? null : (prevQuestionId ?? this.prevQuestionId),
+      prevQuestionId: prevQuestionId ?? this.prevQuestionId,
+      nextQuestionId: nextQuestionId ?? this.nextQuestionId,
+      prevUnseenQuestionId: prevUnseenQuestionId ?? this.prevUnseenQuestionId,
       isFirst: isFirst ?? this.isFirst,
+      isLast: isLast ?? this.isLast,
       isToday: isToday ?? this.isToday,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       isNavigating: isNavigating ?? this.isNavigating,
@@ -90,7 +106,10 @@ class QotdState {
     totalAnswers: 0,
     deck: <Answer>[],
     prevQuestionId: null,
+    nextQuestionId: null,
+    prevUnseenQuestionId: null,
     isFirst: true,
+    isLast: true,
     isToday: true,
     isSubmitting: false,
     isNavigating: false,
@@ -102,6 +121,24 @@ class QotdState {
 class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
   final Set<String> _swipedThisSession = <String>{};
 
+  // Previous (older) question fetched ahead of time so that, when the current
+  // deck is exhausted, we can rise straight into it without a loading gap or an
+  // intermediate "that's everyone" screen.
+  QotdDetail? _prefetchedPrev;
+  String? _prefetchedPrevId;
+
+  void _prefetchPrev(String? prevId) {
+    if (prevId == null) return;
+    if (_prefetchedPrevId == prevId && _prefetchedPrev != null) return;
+    () async {
+      try {
+        final d = await ref.read(qotdRepositoryProvider).getQuestion(prevId);
+        _prefetchedPrev = d;
+        _prefetchedPrevId = prevId;
+      } catch (_) {}
+    }();
+  }
+
   QotdState _stateFrom(QotdDetail d, {required List<Answer> deck}) {
     return QotdState(
       question: d.question,
@@ -109,7 +146,10 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
       totalAnswers: d.totalAnswers,
       deck: deck,
       prevQuestionId: d.prevQuestionId,
+      nextQuestionId: d.nextQuestionId,
+      prevUnseenQuestionId: d.prevUnseenQuestionId,
       isFirst: d.isFirst,
+      isLast: d.isLast,
       isToday: d.isToday,
       isSubmitting: false,
       isNavigating: false,
@@ -117,10 +157,9 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
   }
 
   Future<List<Answer>> _deckFor(QotdDetail d) async {
-    // Today's question is gated until the user answers; past questions read freely.
-    if (d.question == null) return const <Answer>[];
-    final gated = d.isToday && !d.hasAnswered;
-    if (gated) return const <Answer>[];
+    // The deck unlocks only when the viewer's own answer is approved.
+    final approved = d.myAnswer != null && d.myAnswer!.moderationStatus == 'approved';
+    if (d.question == null || !approved) return const <Answer>[];
     return ref.read(qotdRepositoryProvider).getDeck(questionId: d.question!.id, limit: 20);
   }
 
@@ -131,6 +170,7 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
       final today = await repo.getToday();
       if (today.question == null) return QotdState.empty;
       final deck = await _deckFor(today);
+      if (today.hasAnswered) _prefetchPrev(today.prevUnseenQuestionId);
       return _stateFrom(today, deck: deck);
     } on DioException catch (e) {
       final status = e.response?.statusCode;
@@ -139,7 +179,8 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
     }
   }
 
-  /// Submit/update the answer for the focused question, then reveal its deck.
+  /// Submit/update the answer for the focused question. The deck stays locked
+  /// (empty) until a moderator approves the answer.
   Future<void> submitAnswer(String body) async {
     final current = state.valueOrNull;
     if (current?.question == null || current!.isSubmitting) return;
@@ -148,14 +189,12 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
     try {
       final repo = ref.read(qotdRepositoryProvider);
       final answer = await repo.submitAnswer(questionId: current.question!.id, body: body);
-      final deck = await repo.getDeck(questionId: current.question!.id, limit: 20);
 
       final latest = state.valueOrNull ?? current;
       state = AsyncData(
         latest.copyWith(
           myAnswer: answer,
-          deck: deck,
-          totalAnswers: latest.hasAnswered ? latest.totalAnswers : latest.totalAnswers + 1,
+          deck: const <Answer>[], // pending → locked
           isSubmitting: false,
         ),
       );
@@ -166,28 +205,40 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
     }
   }
 
-  /// Walk back to the previous day's question (the reading archive).
-  Future<void> loadPrevious() async {
+  /// Delete the caller's own answer for the focused question; the question
+  /// returns to its gated state so they can answer again.
+  Future<void> deleteMyAnswer() async {
     final current = state.valueOrNull;
-    final prevId = current?.prevQuestionId;
-    if (current == null || prevId == null) return;
-    await _loadQuestion(prevId);
+    final ans = current?.myAnswer;
+    final q = current?.question;
+    if (current == null || ans == null || q == null) return;
+    await ref.read(qotdRepositoryProvider).deleteAnswer(ans.id);
+    await _loadQuestion(q.id);
   }
 
-  /// Jump back to today's question.
+  Future<void> loadPrevious() async {
+    final prevId = state.valueOrNull?.prevQuestionId;
+    if (prevId != null) await _loadQuestion(prevId);
+  }
+
+  Future<void> loadNext() async {
+    final nextId = state.valueOrNull?.nextQuestionId;
+    if (nextId != null) await _loadQuestion(nextId);
+  }
+
   Future<void> goToToday() async {
     final current = state.valueOrNull;
     if (current == null || current.isToday) return;
     state = AsyncData(current.copyWith(isNavigating: true));
     try {
-      final repo = ref.read(qotdRepositoryProvider);
-      final today = await repo.getToday();
+      final today = await ref.read(qotdRepositoryProvider).getToday();
       if (today.question == null) {
         state = AsyncData(QotdState.empty);
         return;
       }
       final deck = await _deckFor(today);
       state = AsyncData(_stateFrom(today, deck: deck));
+      if (today.hasAnswered) _prefetchPrev(today.prevUnseenQuestionId);
     } catch (_) {
       final latest = state.valueOrNull;
       if (latest != null) state = AsyncData(latest.copyWith(isNavigating: false));
@@ -196,14 +247,13 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
 
   Future<void> _loadQuestion(String questionId) async {
     final current = state.valueOrNull;
-    if (current != null) {
-      state = AsyncData(current.copyWith(isNavigating: true));
-    }
+    if (current != null) state = AsyncData(current.copyWith(isNavigating: true));
     try {
       final repo = ref.read(qotdRepositoryProvider);
       final detail = await repo.getQuestion(questionId);
       final deck = await _deckFor(detail);
       state = AsyncData(_stateFrom(detail, deck: deck));
+      if (detail.hasAnswered) _prefetchPrev(detail.prevUnseenQuestionId);
     } catch (_) {
       final latest = state.valueOrNull;
       if (latest != null) state = AsyncData(latest.copyWith(isNavigating: false));
@@ -218,16 +268,46 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
 
     _swipedThisSession.add(answerId);
     final newDeck = List<Answer>.of(current.deck)..removeAt(index);
-    state = AsyncData(current.copyWith(deck: newDeck));
+    // Auto-advance targets the previous day that still has UNSEEN answers.
+    final prevId = current.prevUnseenQuestionId;
 
-    if (newDeck.length <= 3 && current.question != null) {
-      _refillDeck(questionId: current.question!.id, currentDeck: newDeck);
+    // Record the swipe (fire-and-forget).
+    final repo = ref.read(qotdRepositoryProvider);
+    () async {
+      try {
+        await repo.recordSwipe(answerId: answerId, direction: direction);
+      } catch (_) {}
+    }();
+
+    // Last answer + the previous unseen question is prefetched (and still gated):
+    // rise STRAIGHT into it as the next card. Never render the empty deck or a
+    // spinner - that's what caused the "that's everyone" flash.
+    final canInstantAdvance = newDeck.isEmpty &&
+        prevId != null &&
+        _prefetchedPrev != null &&
+        _prefetchedPrevId == prevId &&
+        !_prefetchedPrev!.hasAnswered;
+
+    if (canInstantAdvance) {
+      final d = _prefetchedPrev!;
+      _prefetchedPrev = null;
+      _prefetchedPrevId = null;
+      state = AsyncData(_stateFrom(d, deck: const <Answer>[]));
+      _prefetchPrev(d.prevUnseenQuestionId); // line up the next one back
+      return;
     }
 
-    try {
-      await ref.read(qotdRepositoryProvider).recordSwipe(answerId: answerId, direction: direction);
-    } catch (_) {
-      // Recorded locally; silent fail is acceptable.
+    state = AsyncData(current.copyWith(deck: newDeck));
+
+    // Fallback (prefetch not ready): load the previous unseen question.
+    if (newDeck.isEmpty) {
+      if (prevId != null) {
+        await _loadQuestion(prevId);
+      }
+      return;
+    }
+    if (newDeck.length <= 3 && current.question != null) {
+      _refillDeck(questionId: current.question!.id, currentDeck: newDeck);
     }
   }
 
@@ -241,12 +321,9 @@ class QotdController extends AutoDisposeAsyncNotifier<QotdState> {
             !existingIds.contains(a.id) && !_swipedThisSession.contains(a.id)),
       ];
       final latest = state.valueOrNull;
-      // Guard against a race where the user navigated to another question.
       if (latest == null || latest.question?.id != questionId) return;
       state = AsyncData(latest.copyWith(deck: merged));
-    } catch (_) {
-      // Keep current deck on failure.
-    }
+    } catch (_) {}
   }
 
   Future<void> refresh() async {

@@ -9,6 +9,7 @@ class Answer {
     required this.heartsCount,
     required this.isHearted,
     required this.createdAt,
+    this.moderationStatus = 'approved',
   });
 
   final String id;
@@ -19,6 +20,7 @@ class Answer {
   final int heartsCount;
   final bool isHearted;
   final DateTime createdAt;
+  final String moderationStatus;
 
   Answer copyWith({int? heartsCount, bool? isHearted}) {
     return Answer(
@@ -46,6 +48,7 @@ class Answer {
       isHearted: json['is_hearted'] == true,
       createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ??
           DateTime.fromMillisecondsSinceEpoch(0),
+      moderationStatus: (json['moderation_status'] ?? 'approved').toString(),
     );
   }
 }
