@@ -12,6 +12,7 @@ import '../../core/widgets/theme_toggle_button.dart';
 import '../profile/controller/profile_controller.dart';
 import '../profile/my_profile_screen.dart';
 import '../swipe/swipe_screen.dart';
+import '../qotd/qotd_screen.dart';
 import 'controller/feed_controller.dart';
 import 'models/post.dart';
 import '../swipe/swipe_controller.dart';
@@ -42,7 +43,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
     final currentIndex = ref.watch(bottomNavIndexProvider);
 
     void onSelectBottomNav(int value) {
-      if (value == 2) {
+      if (value == 3) {
         ref.read(profileScrollToTopProvider.notifier).state++;
       }
       if (value == currentIndex) return;
@@ -57,6 +58,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       const KeyedSubtree(
         key: ValueKey('tab-discover'),
         child: SwipeDeckContent(),
+      ),
+      const KeyedSubtree(
+        key: ValueKey('tab-daily'),
+        child: QotdScreen(),
       ),
       const KeyedSubtree(
         key: ValueKey('tab-bookmarks'),
@@ -180,7 +185,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           final double bottomInset = isDesktop ? 24 : 88;
 
           return NestedScrollView(
-            physics: currentIndex == 0 ? const NeverScrollableScrollPhysics() : null,
+            physics: (currentIndex == 0 || currentIndex == 1) ? const NeverScrollableScrollPhysics() : null,
             floatHeaderSlivers: false,
             headerSliverBuilder: (context, _) {
               return <Widget>[
@@ -224,7 +229,7 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             body: Stack(
               children: <Widget>[
                 mainForSize(),
-                if (currentIndex == 2)
+                if (currentIndex == 3)
                   Positioned(
                     right: rightInset,
                     bottom: bottomInset,
@@ -282,18 +287,25 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
                       onTap: () => onSelectBottomNav(0),
                     ),
                     _NavItem(
+                      icon: Icons.wb_sunny_outlined,
+                      activeIcon: Icons.wb_sunny,
+                      label: 'Daily',
+                      selected: currentIndex == 1,
+                      onTap: () => onSelectBottomNav(1),
+                    ),
+                    _NavItem(
                       icon: Icons.bookmark_border,
                       activeIcon: Icons.bookmark,
                       label: 'Bookmarks',
-                      selected: currentIndex == 1,
-                      onTap: () => onSelectBottomNav(1),
+                      selected: currentIndex == 2,
+                      onTap: () => onSelectBottomNav(2),
                     ),
                     _NavItem(
                       icon: Icons.person_outline,
                       activeIcon: Icons.person,
                       label: 'Profile',
-                      selected: currentIndex == 2,
-                      onTap: () => onSelectBottomNav(2),
+                      selected: currentIndex == 3,
+                      onTap: () => onSelectBottomNav(3),
                     ),
                   ],
                 ),
@@ -334,18 +346,26 @@ class _DesktopSidebar extends StatelessWidget {
           const SizedBox(height: 8),
           _SidebarItem(
             isActive: selectedIndex == 1,
-            icon: Icons.bookmark_border,
-            activeIcon: Icons.bookmark,
-            label: 'Bookmarks',
+            icon: Icons.wb_sunny_outlined,
+            activeIcon: Icons.wb_sunny,
+            label: 'Daily',
             onTap: () => onSelected(1),
           ),
           const SizedBox(height: 8),
           _SidebarItem(
             isActive: selectedIndex == 2,
+            icon: Icons.bookmark_border,
+            activeIcon: Icons.bookmark,
+            label: 'Bookmarks',
+            onTap: () => onSelected(2),
+          ),
+          const SizedBox(height: 8),
+          _SidebarItem(
+            isActive: selectedIndex == 3,
             icon: Icons.person_outline,
             activeIcon: Icons.person,
             label: 'Profile',
-            onTap: () => onSelected(2),
+            onTap: () => onSelected(3),
           ),
         ],
       ),
@@ -433,7 +453,7 @@ class _BookmarksTabState extends ConsumerState<_BookmarksTab> {
   Map<String, dynamic>? _lastReadPost;
   bool _isLastReadLoading = false;
 
-  Future<void> _switchBookmarkPart(int index, String oldPostId, String newPostId) async {
+  Future<void> _switchBookmarkPart(String oldPostId, String newPostId) async {
     if (_swappingIds.contains(oldPostId) || _swappingIds.contains(newPostId)) return;
 
     setState(() {
@@ -465,7 +485,10 @@ class _BookmarksTabState extends ConsumerState<_BookmarksTab> {
 
       // 3. Update the item in the list
       setState(() {
-        _items[index] = newBmItem;
+        final idx = _items.indexWhere((x) => x.id == oldPostId);
+        if (idx >= 0) {
+          _items[idx] = newBmItem;
+        }
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -766,19 +789,27 @@ class _BookmarksTabState extends ConsumerState<_BookmarksTab> {
                     (context, index) {
                       final item = _items[index];
                       return Padding(
+                        key: ValueKey<String>('bm-pad-${item.id}'),
                         padding: const EdgeInsets.only(bottom: 14),
                         child: _BmCard(
                           key: ValueKey<String>('bm-${item.id}'),
                           item: item,
                           isLoading: _swappingIds.contains(item.id),
-                          onSwitchPart: (newId) => _switchBookmarkPart(index, item.id, newId),
+                          onSwitchPart: (newId) => _switchBookmarkPart(item.id, newId),
                           onRemove: () async {
-                            setState(() => _items.removeAt(index));
+                            final idx = _items.indexOf(item);
+                            if (idx < 0) return;
+                            setState(() => _items.removeAt(idx));
                             try {
-                              final dio = ref.read(apiClientProvider).dio;
-                              await dio.delete<void>('/api/v1/bookmarks/${item.id}');
+                              final repo = ref.read(feedRepositoryProvider);
+                              await repo.removeBookmark(postId: item.id);
                             } catch (_) {
-                              if (mounted) setState(() => _items.insert(index, item));
+                              if (mounted) {
+                                setState(() {
+                                  final reInsertIdx = idx.clamp(0, _items.length);
+                                  _items.insert(reInsertIdx, item);
+                                });
+                              }
                             }
                           },
                         ),

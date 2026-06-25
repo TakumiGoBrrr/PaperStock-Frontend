@@ -7,17 +7,21 @@ class AppNotification {
     required this.postId,
     this.postTitle,
     this.postModerationNote,
+    this.questionId,
+    this.questionPrompt,
     required this.isRead,
     required this.createdAt,
   });
 
   final String id;
-  final String type; // follow | like | comment | sequel | moderation_rejected | moderation_deleted
+  final String type; // follow | like | comment | sequel | moderation_rejected | moderation_deleted | qotd_challenge | qotd_new
   final String actorId;
   final String actorDisplayName;
   final String? postId;
   final String? postTitle;
   final String? postModerationNote;
+  final String? questionId;
+  final String? questionPrompt;
   final bool isRead;
   final DateTime createdAt;
 
@@ -31,6 +35,8 @@ class AppNotification {
       postId: (json['post_id'] as Object?)?.toString(),
       postTitle: (json['post_title'] as Object?)?.toString(),
       postModerationNote: (json['post_moderation_note'] as Object?)?.toString(),
+      questionId: (json['question_id'] as Object?)?.toString(),
+      questionPrompt: (json['question_prompt'] as Object?)?.toString(),
       isRead: (json['is_read'] as Object?) == true,
       createdAt: DateTime.tryParse(
               (json['created_at'] as Object?)?.toString() ?? '') ??
@@ -46,6 +52,8 @@ class AppNotification {
     String? postId,
     String? postTitle,
     String? postModerationNote,
+    String? questionId,
+    String? questionPrompt,
     bool? isRead,
     DateTime? createdAt,
   }) {
@@ -57,6 +65,8 @@ class AppNotification {
       postId: postId ?? this.postId,
       postTitle: postTitle ?? this.postTitle,
       postModerationNote: postModerationNote ?? this.postModerationNote,
+      questionId: questionId ?? this.questionId,
+      questionPrompt: questionPrompt ?? this.questionPrompt,
       isRead: isRead ?? this.isRead,
       createdAt: createdAt ?? this.createdAt,
     );

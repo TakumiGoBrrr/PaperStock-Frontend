@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/api/api_client_provider.dart';
+import '../../core/notifications/local_notifications_service.dart';
 import '../../core/storage/opened_posts_store.dart';
 import '../../core/theme/theme_controller.dart';
 import '../../core/widgets/glass_app_bar.dart';
@@ -234,6 +235,10 @@ class SettingsScreen extends ConsumerWidget {
                               .setDarkMode(value),
                         ),
                       ),
+                      if (LocalNotificationsService.instance.isSupported) ...<Widget>[
+                        const Divider(height: 1),
+                        const _DailyReminderTile(),
+                      ],
                       const Divider(height: 1),
                       ListTile(
                         title: const Text('Swipe Tutorial'),
@@ -279,6 +284,94 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Android-only toggle + time picker for the daily Question-of-the-Day reminder.
+class _DailyReminderTile extends ConsumerStatefulWidget {
+  const _DailyReminderTile();
+
+  @override
+  ConsumerState<_DailyReminderTile> createState() => _DailyReminderTileState();
+}
+
+class _DailyReminderTileState extends ConsumerState<_DailyReminderTile> {
+  bool _enabled = false;
+  TimeOfDay _time = const TimeOfDay(
+    hour: LocalNotificationsService.defaultHour,
+    minute: LocalNotificationsService.defaultMinute,
+  );
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final svc = LocalNotificationsService.instance;
+    final enabled = await svc.isEnabled();
+    final (h, m) = await svc.reminderTime();
+    if (!mounted) return;
+    setState(() {
+      _enabled = enabled;
+      _time = TimeOfDay(hour: h, minute: m);
+      _loading = false;
+    });
+  }
+
+  Future<void> _toggle(bool value) async {
+    final svc = LocalNotificationsService.instance;
+    if (value) {
+      final granted = await svc.requestPermission();
+      if (!granted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Enable notifications in system settings to use reminders.')),
+          );
+        }
+        return;
+      }
+      await svc.scheduleDaily(hour: _time.hour, minute: _time.minute);
+    } else {
+      await svc.cancelReminder();
+    }
+    if (!mounted) return;
+    setState(() => _enabled = value);
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(context: context, initialTime: _time);
+    if (picked == null) return;
+    setState(() => _time = picked);
+    if (_enabled) {
+      await LocalNotificationsService.instance
+          .scheduleDaily(hour: picked.hour, minute: picked.minute);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const ListTile(title: Text('Daily question reminder'));
+    }
+    return Column(
+      children: <Widget>[
+        ListTile(
+          title: const Text('Daily question reminder'),
+          subtitle: const Text('A daily nudge to answer the Question of the Day'),
+          trailing: Switch(value: _enabled, onChanged: _toggle),
+        ),
+        if (_enabled)
+          ListTile(
+            dense: true,
+            title: const Text('Reminder time'),
+            trailing: Text(_time.format(context)),
+            onTap: _pickTime,
+          ),
+      ],
     );
   }
 }

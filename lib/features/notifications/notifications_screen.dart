@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../feed/feed_screen.dart' show bottomNavIndexProvider;
 import 'controller/notifications_controller.dart';
 import 'models/app_notification.dart';
 
@@ -113,6 +114,13 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     if (n.actorId.isNotEmpty) {
                       context.push('/profile/${n.actorId}');
                     }
+                    return;
+                  }
+
+                  if (n.type == 'qotd_challenge' || n.type == 'qotd_new') {
+                    // Open the "Daily" tab (index 1) inside the feed shell.
+                    ref.read(bottomNavIndexProvider.notifier).state = 1;
+                    context.go('/feed');
                     return;
                   }
 
@@ -301,6 +309,10 @@ IconData _iconFor(String type) {
       return Icons.gavel_outlined;
     case 'moderation_deleted':
       return Icons.delete_forever_outlined;
+    case 'qotd_challenge':
+      return Icons.emoji_events_outlined;
+    case 'qotd_new':
+      return Icons.wb_sunny_outlined;
     default:
       return Icons.notifications_outlined;
   }
@@ -320,6 +332,10 @@ String _titleFor(AppNotification n, String actorName) {
       return 'Post Rejected by Moderator';
     case 'moderation_deleted':
       return 'Post Deleted by Moderator';
+    case 'qotd_challenge':
+      return '$actorName answered today\'s question';
+    case 'qotd_new':
+      return 'Today\'s question is live';
     default:
       return 'New notification';
   }
@@ -345,6 +361,12 @@ String _subtitleFor(AppNotification n) {
   }
   if (n.type == 'like' && (n.postId ?? '').isNotEmpty) {
     return 'Tap to view the post.';
+  }
+  if (n.type == 'qotd_challenge' || n.type == 'qotd_new') {
+    if ((n.questionPrompt ?? '').isNotEmpty) {
+      return '"${n.questionPrompt}" — tap to answer.';
+    }
+    return 'Tap to answer today\'s question.';
   }
   if (n.type == 'follow') {
     return 'Tap to view profile.';

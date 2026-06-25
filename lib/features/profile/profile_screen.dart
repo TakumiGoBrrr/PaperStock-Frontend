@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/api/api_client_provider.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_header.dart';
 import '../../core/widgets/notification_bell_button.dart';
 import '../../core/widgets/theme_toggle_button.dart';
@@ -345,7 +346,30 @@ class _ProfileContentState extends ConsumerState<ProfileContent> {
               const ThemeToggleButton(),
             ],
           ),
-          right: const NotificationBellButton(),
+          right: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const NotificationBellButton(),
+              if (!isSelf) ...[
+                const SizedBox(width: 8),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  tooltip: 'Options',
+                  onSelected: (value) {
+                    if (value == 'report') {
+                      _showReportUserDialog(context, ref, userId);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'report',
+                      child: Text('Report Account'),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
         ),
       );
     }
@@ -1393,4 +1417,230 @@ FeedPost _toFeedPost(Post post, {required String? authorName}) {
 String _shortId(String id) {
   if (id.length <= 8) return id;
   return id.substring(0, 8);
+}
+
+// ─── Account Reporting Dialogs ────────────────────────────────────────────────
+
+void _showReportUserDialog(BuildContext context, WidgetRef ref, String targetUserId) {
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: isDark ? cardCharcoalDark : cardCreamLight,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (context) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Report Account',
+                style: GoogleFonts.playfairDisplay(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? cardCharcoalText : cardCreamText,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Why are you reporting this account?',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  color: isDark ? cardCharcoalSubtext : cardCreamSubtext,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _UserReportOption(
+                label: 'Spam',
+                onTap: () => _submitUserReport(context, ref, targetUserId, 'spam'),
+                isDark: isDark,
+              ),
+              _UserReportOption(
+                label: 'Abuse or Harassment',
+                onTap: () => _submitUserReport(context, ref, targetUserId, 'abuse'),
+                isDark: isDark,
+              ),
+              _UserReportOption(
+                label: 'Other',
+                onTap: () async {
+                  Navigator.pop(context); // close bottom sheet
+                  final customReason = await showDialog<String>(
+                    context: context,
+                    builder: (context) {
+                      final controller = TextEditingController();
+                      return AlertDialog(
+                        backgroundColor: isDark ? cardCharcoalDark : cardCreamLight,
+                        title: Text(
+                          'Specify Reason',
+                          style: GoogleFonts.playfairDisplay(
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? cardCharcoalText : cardCreamText,
+                          ),
+                        ),
+                        content: TextField(
+                          controller: controller,
+                          maxLength: 200,
+                          autofocus: true,
+                          style: GoogleFonts.inter(
+                            color: isDark ? cardCharcoalText : cardCreamText,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Enter reason (up to 200 characters)...',
+                            hintStyle: GoogleFonts.inter(
+                              color: isDark ? cardCharcoalSubtext : cardCreamSubtext,
+                            ),
+                            focusedBorder: UnderlineInputBorder(
+                              borderSide: BorderSide(
+                                color: isDark ? cardCharcoalText : cardCreamText,
+                              ),
+                            ),
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text(
+                              'CANCEL',
+                              style: GoogleFonts.inter(
+                                color: isDark ? cardCharcoalSubtext : cardCreamSubtext,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              final text = controller.text.trim();
+                              if (text.isNotEmpty) {
+                                Navigator.pop(context, text);
+                              }
+                            },
+                            child: Text(
+                              'SUBMIT',
+                              style: GoogleFonts.inter(
+                                color: isDark ? cardCharcoalText : cardCreamText,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                  if (customReason != null && customReason.isNotEmpty) {
+                    if (context.mounted) {
+                      _submitUserReport(context, ref, targetUserId, customReason, popContext: false);
+                    }
+                  }
+                },
+                isDark: isDark,
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+class _UserReportOption extends StatelessWidget {
+  const _UserReportOption({
+    required this.label,
+    required this.onTap,
+    required this.isDark,
+  });
+  final String label;
+  final VoidCallback onTap;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = isDark ? cardCharcoalText : cardCreamText;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 8),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isDark ? cardCharcoalEdge : cardCreamEdge,
+            width: 0.8,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: isDark ? cardCharcoalSubtext : cardCreamSubtext,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _submitUserReport(
+  BuildContext context,
+  WidgetRef ref,
+  String targetUserId,
+  String reason, {
+  bool popContext = true,
+}) async {
+  if (popContext) {
+    Navigator.pop(context); // close bottom sheet
+  }
+
+  final dio = ref.read(apiClientProvider).dio;
+  try {
+    await dio.post<void>(
+      '/api/v1/users/$targetUserId/report',
+      data: <String, dynamic>{'reason': reason},
+    );
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Thank you. The account has been reported for review.'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  } on DioException catch (e) {
+    if (!context.mounted) return;
+    final msg = e.response?.data?['detail']?.toString() ?? 'Failed to submit report';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error: $e'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 }
