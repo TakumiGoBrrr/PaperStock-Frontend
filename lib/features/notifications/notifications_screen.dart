@@ -117,7 +117,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     return;
                   }
 
-                  if (n.type == 'qotd_challenge' || n.type == 'qotd_new') {
+                  if (n.type.startsWith('qotd_')) {
                     // Open the "Daily" tab (index 1) inside the feed shell.
                     ref.read(bottomNavIndexProvider.notifier).state = 1;
                     context.go('/feed');
@@ -313,6 +313,10 @@ IconData _iconFor(String type) {
       return Icons.emoji_events_outlined;
     case 'qotd_new':
       return Icons.wb_sunny_outlined;
+    case 'qotd_approved':
+      return Icons.check_circle_outline;
+    case 'qotd_rejected':
+      return Icons.cancel_outlined;
     default:
       return Icons.notifications_outlined;
   }
@@ -336,6 +340,10 @@ String _titleFor(AppNotification n, String actorName) {
       return '$actorName answered today\'s question';
     case 'qotd_new':
       return 'Today\'s question is live';
+    case 'qotd_approved':
+      return 'Your answer was approved';
+    case 'qotd_rejected':
+      return 'Your answer wasn\'t approved';
     default:
       return 'New notification';
   }
@@ -361,6 +369,16 @@ String _subtitleFor(AppNotification n) {
   }
   if (n.type == 'like' && (n.postId ?? '').isNotEmpty) {
     return 'Tap to view the post.';
+  }
+  if (n.type == 'qotd_approved') {
+    return (n.questionPrompt ?? '').isNotEmpty
+        ? '"${n.questionPrompt}" - tap to see the answers.'
+        : 'Tap to see everyone\'s answers.';
+  }
+  if (n.type == 'qotd_rejected') {
+    return (n.questionPrompt ?? '').isNotEmpty
+        ? '"${n.questionPrompt}" - tap to write a new one.'
+        : 'Tap to write a new answer.';
   }
   if (n.type == 'qotd_challenge' || n.type == 'qotd_new') {
     if ((n.questionPrompt ?? '').isNotEmpty) {

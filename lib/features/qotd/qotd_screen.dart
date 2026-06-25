@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/api/api_config.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/card_brightness_provider.dart';
 import '../profile/controller/profile_controller.dart';
 import 'models/answer.dart';
 import 'qotd_controller.dart';
@@ -12,6 +14,22 @@ import 'qotd_controller.dart';
 const _kCardRadius = 24.0;
 const _kSwipeThresholdFraction = 0.22;
 const _kFlingVelocity = 500.0;
+
+/// Card colours that follow the sun/moon (card-brightness) toggle, matching the
+/// Discover deck so the toggle visibly changes the QOTD cards too.
+class _CardPalette {
+  const _CardPalette(this.bg, this.mid, this.edge, this.text, this.subtext, this.accent);
+  final Color bg, mid, edge, text, subtext, accent;
+}
+
+_CardPalette _palette(WidgetRef ref) {
+  final isDark = (ref.watch(cardBrightnessProvider).valueOrNull ?? Brightness.dark) == Brightness.dark;
+  return isDark
+      ? const _CardPalette(cardCharcoalDark, cardCharcoalMid, cardCharcoalEdge,
+          cardCharcoalText, cardCharcoalSubtext, cardCharcoalAccent)
+      : const _CardPalette(cardCreamLight, cardCreamMid, cardCreamEdge,
+          cardCreamText, cardCreamSubtext, cardCreamAccent);
+}
 
 /// The "Daily" tab. Each question is gated - you must answer it to see others'
 /// answers - and you flip between days with prev/next. Answers advance with a
@@ -47,18 +65,32 @@ class _QotdBody extends ConsumerWidget {
     const maxContentWidth = 600.0;
     const maxDeckHeight = 560.0;
 
+    final c = ref.read(qotdControllerProvider.notifier);
+    final onPrev = state.prevQuestionId != null ? () => c.loadPrevious() : null;
+    final onNext = state.nextQuestionId != null ? () => c.loadNext() : null;
+
     final Widget content;
     if (state.isGated) {
       // No answer yet (or last one rejected) → focused invitation card.
       content = Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-        child: _GatedQuestionCard(key: ValueKey('gate-${state.question!.id}'), state: state),
+        child: _DaySwiper(
+          key: ValueKey('swipe-gate-${state.question!.id}'),
+          onPrev: onPrev,
+          onNext: onNext,
+          child: _GatedQuestionCard(key: ValueKey('gate-${state.question!.id}'), state: state),
+        ),
       );
     } else if (state.isPending) {
       // Answered but awaiting moderation → locked until approved.
       content = Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-        child: _PendingReviewCard(key: ValueKey('pend-${state.question!.id}'), state: state),
+        child: _DaySwiper(
+          key: ValueKey('swipe-pend-${state.question!.id}'),
+          onPrev: onPrev,
+          onNext: onNext,
+          child: _PendingReviewCard(key: ValueKey('pend-${state.question!.id}'), state: state),
+        ),
       );
     } else {
       // Approved → banner stuck to top + the answer deck below.
@@ -107,6 +139,86 @@ class _QotdBody extends ConsumerWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// Wraps a question card so it can be swiped horizontally to change day:
+/// drag right → previous (older) question, drag left → next (newer). Passing a
+/// null callback disables that direction (e.g. at the ends of the chain).
+class _DaySwiper extends StatefulWidget {
+  const _DaySwiper({super.key, required this.child, this.onPrev, this.onNext});
+  final Widget child;
+  final VoidCallback? onPrev;
+  final VoidCallback? onNext;
+
+  @override
+  State<_DaySwiper> createState() => _DaySwiperState();
+}
+
+class _DaySwiperState extends State<_DaySwiper> with SingleTickerProviderStateMixin {
+  double _dx = 0;
+  late final AnimationController _ctrl;
+  late Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 220))
+      ..addListener(() => setState(() => _dx = _anim.value));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  void _onUpdate(DragUpdateDetails d) {
+    final nd = _dx + d.delta.dx;
+    if (nd > 0 && widget.onPrev == null) return; // can't go older
+    if (nd < 0 && widget.onNext == null) return; // can't go newer
+    setState(() => _dx = nd);
+  }
+
+  void _onEnd(DragEndDetails d, double width) {
+    final vx = d.velocity.pixelsPerSecond.dx;
+    final threshold = width * 0.25;
+    if ((_dx > threshold || vx > 600) && widget.onPrev != null) {
+      _exit(width, widget.onPrev!);
+    } else if ((_dx < -threshold || vx < -600) && widget.onNext != null) {
+      _exit(-width, widget.onNext!);
+    } else {
+      _animateTo(0); // snap back
+    }
+  }
+
+  void _animateTo(double target) {
+    _anim = Tween<double>(begin: _dx, end: target)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _ctrl.forward(from: 0);
+  }
+
+  void _exit(double target, VoidCallback nav) {
+    _anim = Tween<double>(begin: _dx, end: target)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeIn));
+    _ctrl.forward(from: 0).whenCompleteOrCancel(nav);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        return GestureDetector(
+          onHorizontalDragUpdate: _onUpdate,
+          onHorizontalDragEnd: (d) => _onEnd(d, width),
+          child: Transform.translate(
+            offset: Offset(_dx, 0),
+            child: Transform.rotate(angle: _dx * 0.0005, child: widget.child),
+          ),
+        );
+      },
     );
   }
 }
@@ -425,6 +537,7 @@ class _GatedQuestionCardState extends ConsumerState<_GatedQuestionCard>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final p = _palette(ref);
     final state = widget.state;
     final question = state.question!;
 
@@ -449,15 +562,16 @@ class _GatedQuestionCardState extends ConsumerState<_GatedQuestionCard>
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
                 decoration: BoxDecoration(
+                  color: p.bg,
                   gradient: LinearGradient(
                     begin: Alignment.topLeft, end: Alignment.bottomRight,
                     colors: <Color>[
-                      colorScheme.primary.withValues(alpha: 0.16),
-                      colorScheme.primary.withValues(alpha: 0.05),
+                      p.accent.withValues(alpha: 0.16),
+                      p.accent.withValues(alpha: 0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(_kCardRadius),
-                  border: Border.all(color: colorScheme.primary.withValues(alpha: 0.22), width: 0.8),
+                  border: Border.all(color: p.accent.withValues(alpha: 0.22), width: 0.8),
                   boxShadow: <BoxShadow>[
                     BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 24, offset: const Offset(0, 8)),
                   ],
@@ -469,20 +583,20 @@ class _GatedQuestionCardState extends ConsumerState<_GatedQuestionCard>
                     Row(
                       children: <Widget>[
                         Icon(state.isToday ? Icons.wb_sunny_rounded : Icons.history_rounded,
-                            size: 16, color: colorScheme.primary),
+                            size: 16, color: p.accent),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             state.isToday ? 'QUESTION OF THE DAY' : 'FROM ${question.activeDate ?? "earlier"}',
                             style: GoogleFonts.inter(
-                                fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.0, color: colorScheme.primary),
+                                fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.0, color: p.accent),
                           ),
                         ),
                         IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.ios_share_rounded, size: 18, color: colorScheme.primary),
+                          icon: Icon(Icons.ios_share_rounded, size: 18, color: p.accent),
                           tooltip: 'Challenge a friend',
                           onPressed: () => _shareQuestion(ref, question.id, question.prompt),
                         ),
@@ -491,7 +605,7 @@ class _GatedQuestionCardState extends ConsumerState<_GatedQuestionCard>
                     const SizedBox(height: 22),
                     Text(
                       question.prompt,
-                      style: GoogleFonts.lora(fontSize: 30, fontWeight: FontWeight.w700, height: 1.28, color: colorScheme.onSurface),
+                      style: GoogleFonts.lora(fontSize: 30, fontWeight: FontWeight.w700, height: 1.28, color: p.text),
                     ),
                     if (state.isRejected) ...<Widget>[
                       const SizedBox(height: 16),
@@ -526,13 +640,13 @@ class _GatedQuestionCardState extends ConsumerState<_GatedQuestionCard>
                     const SizedBox(height: 26),
                     Row(
                       children: <Widget>[
-                        Icon(Icons.lock_outline_rounded, size: 14, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                        Icon(Icons.lock_outline_rounded, size: 14, color: p.subtext.withValues(alpha: 0.8)),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             "Answer to unlock everyone else's replies.",
                             style: GoogleFonts.inter(
-                                fontSize: 12.5, height: 1.4, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.75)),
+                                fontSize: 12.5, height: 1.4, color: p.subtext.withValues(alpha: 0.85)),
                           ),
                         ),
                       ],
@@ -573,7 +687,7 @@ class _PendingReviewCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cs = Theme.of(context).colorScheme;
+    final p = _palette(ref);
     final question = state.question!;
     return _RiseIn(
       child: Center(
@@ -585,16 +699,17 @@ class _PendingReviewCard extends ConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
                 decoration: BoxDecoration(
+                  color: p.bg,
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: <Color>[
-                      cs.primary.withValues(alpha: 0.14),
-                      cs.primary.withValues(alpha: 0.04),
+                      p.accent.withValues(alpha: 0.14),
+                      p.accent.withValues(alpha: 0.04),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(_kCardRadius),
-                  border: Border.all(color: cs.primary.withValues(alpha: 0.20), width: 0.8),
+                  border: Border.all(color: p.accent.withValues(alpha: 0.20), width: 0.8),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -602,19 +717,19 @@ class _PendingReviewCard extends ConsumerWidget {
                   children: <Widget>[
                     Row(
                       children: <Widget>[
-                        Icon(state.isToday ? Icons.wb_sunny_rounded : Icons.history_rounded, size: 16, color: cs.primary),
+                        Icon(state.isToday ? Icons.wb_sunny_rounded : Icons.history_rounded, size: 16, color: p.accent),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             state.isToday ? 'QUESTION OF THE DAY' : 'FROM ${question.activeDate ?? "earlier"}',
-                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.0, color: cs.primary),
+                            style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.0, color: p.accent),
                           ),
                         ),
                         IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           visualDensity: VisualDensity.compact,
-                          icon: Icon(Icons.ios_share_rounded, size: 18, color: cs.primary),
+                          icon: Icon(Icons.ios_share_rounded, size: 18, color: p.accent),
                           tooltip: 'Challenge a friend',
                           onPressed: () => _shareQuestion(ref, question.id, question.prompt),
                         ),
@@ -623,18 +738,18 @@ class _PendingReviewCard extends ConsumerWidget {
                     const SizedBox(height: 20),
                     Text(
                       question.prompt,
-                      style: GoogleFonts.lora(fontSize: 26, fontWeight: FontWeight.w700, height: 1.28, color: cs.onSurface),
+                      style: GoogleFonts.lora(fontSize: 26, fontWeight: FontWeight.w700, height: 1.28, color: p.text),
                     ),
                     const SizedBox(height: 22),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Icon(Icons.hourglass_top_rounded, size: 15, color: cs.onSurfaceVariant.withValues(alpha: 0.8)),
+                        Icon(Icons.hourglass_top_rounded, size: 15, color: p.subtext.withValues(alpha: 0.9)),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             "Your answer is in review. You'll see everyone's answers once it's approved.",
-                            style: GoogleFonts.inter(fontSize: 13, height: 1.45, color: cs.onSurfaceVariant.withValues(alpha: 0.8)),
+                            style: GoogleFonts.inter(fontSize: 13, height: 1.45, color: p.subtext.withValues(alpha: 0.9)),
                           ),
                         ),
                       ],
@@ -825,14 +940,14 @@ class _AnswerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final p = _palette(ref);
     return Container(
       width: double.infinity,
       height: double.infinity,
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
+        color: p.bg,
         borderRadius: BorderRadius.circular(_kCardRadius),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.5), width: 0.8),
+        border: Border.all(color: p.edge, width: 0.8),
         boxShadow: <BoxShadow>[
           BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 24, offset: const Offset(0, 8)),
         ],
@@ -847,24 +962,24 @@ class _AnswerCard extends ConsumerWidget {
               children: <Widget>[
                 CircleAvatar(
                   radius: 16,
-                  backgroundColor: colorScheme.primary.withValues(alpha: 0.16),
+                  backgroundColor: p.accent.withValues(alpha: 0.16),
                   child: Text(
                     answer.authorName.isNotEmpty ? answer.authorName[0].toUpperCase() : '?',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: colorScheme.primary),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: p.accent),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     answer.authorName.isNotEmpty ? answer.authorName : 'Anonymous',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: p.text),
                     maxLines: 1, overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 IconButton(
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  icon: Icon(Icons.ios_share_rounded, size: 16, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
+                  icon: Icon(Icons.ios_share_rounded, size: 16, color: p.subtext.withValues(alpha: 0.7)),
                   tooltip: 'Share answer',
                   onPressed: () => _shareAnswer(ref, answer),
                 ),
@@ -872,7 +987,7 @@ class _AnswerCard extends ConsumerWidget {
                 IconButton(
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  icon: Icon(Icons.flag_outlined, size: 16, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                  icon: Icon(Icons.flag_outlined, size: 16, color: p.subtext.withValues(alpha: 0.6)),
                   tooltip: 'Report answer',
                   onPressed: () => _reportAnswer(context, ref, answer),
                 ),
@@ -881,17 +996,17 @@ class _AnswerCard extends ConsumerWidget {
             const SizedBox(height: 20),
             Expanded(
               child: SingleChildScrollView(
-                child: Text(answer.body, style: GoogleFonts.lora(fontSize: 19, height: 1.55, color: colorScheme.onSurface)),
+                child: Text(answer.body, style: GoogleFonts.lora(fontSize: 19, height: 1.55, color: p.text)),
               ),
             ),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
-                Icon(Icons.swipe_rounded, size: 13, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5)),
+                Icon(Icons.swipe_rounded, size: 13, color: p.subtext.withValues(alpha: 0.6)),
                 const SizedBox(width: 6),
                 Text('Swipe right to ❤  ·  left to skip',
-                    style: GoogleFonts.inter(fontSize: 12, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.55))),
+                    style: GoogleFonts.inter(fontSize: 12, color: p.subtext.withValues(alpha: 0.65))),
               ],
             ),
           ],
