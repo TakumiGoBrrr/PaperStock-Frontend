@@ -45,17 +45,17 @@ class _QotdBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final content = Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        _QuestionHeader(state: state),
-        const SizedBox(height: 16),
-        if (state.isGated)
-          Expanded(child: _GatedComposer(state: state))
-        else
-          Expanded(child: _DeckArea(state: state)),
-      ],
-    );
+    // Gated (today, not yet answered): show the big question card invitation.
+    final Widget content = state.isGated
+        ? _GatedQuestionCard(state: state)
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              _QuestionHeader(state: state),
+              const SizedBox(height: 16),
+              Expanded(child: _DeckArea(state: state)),
+            ],
+          );
 
     return Stack(
       children: <Widget>[
@@ -186,86 +186,133 @@ class _QuestionHeader extends ConsumerWidget {
   }
 }
 
-// ─── Gated composer (today, not yet answered) ───────────────────────────────────
+// ─── Gated question card (today, not yet answered) ──────────────────────────────
 
-class _GatedComposer extends ConsumerStatefulWidget {
-  const _GatedComposer({required this.state});
+/// A focused invitation card: the question, big. Tap anywhere (or the button)
+/// to write your answer — which unlocks everyone else's replies.
+class _GatedQuestionCard extends ConsumerWidget {
+  const _GatedQuestionCard({required this.state});
   final QotdState state;
 
   @override
-  ConsumerState<_GatedComposer> createState() => _GatedComposerState();
-}
-
-class _GatedComposerState extends ConsumerState<_GatedComposer> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-    FocusScope.of(context).unfocus();
-    try {
-      await ref.read(qotdControllerProvider.notifier).submitAnswer(text);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_friendlyError(e)), behavior: SnackBarBehavior.floating),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
-    final submitting = widget.state.isSubmitting;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Text('Your answer',
-            style: GoogleFonts.inter(
-                fontSize: 13, fontWeight: FontWeight.w700, color: colorScheme.onSurfaceVariant)),
-        const SizedBox(height: 8),
-        Expanded(
-          child: TextField(
-            controller: _controller,
-            maxLength: 500,
-            maxLines: null,
-            expands: true,
-            textAlignVertical: TextAlignVertical.top,
-            enabled: !submitting,
-            style: GoogleFonts.inter(fontSize: 16, height: 1.5),
-            decoration: InputDecoration(
-              hintText: 'Share your answer with the community…',
-              alignLabelWithHint: true,
-              filled: true,
-              fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-              border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+    final question = state.question!;
+
+    return Center(
+      child: SingleChildScrollView(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _openComposerSheet(context, ref),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[
+                  colorScheme.primary.withValues(alpha: 0.16),
+                  colorScheme.primary.withValues(alpha: 0.05),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(_kCardRadius),
+              border: Border.all(color: colorScheme.primary.withValues(alpha: 0.22), width: 0.8),
+              boxShadow: <BoxShadow>[
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Icon(Icons.wb_sunny_rounded, size: 16, color: colorScheme.primary),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'QUESTION OF THE DAY',
+                        style: GoogleFonts.inter(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
+                      icon: Icon(Icons.ios_share_rounded, size: 18, color: colorScheme.primary),
+                      tooltip: 'Challenge a friend',
+                      onPressed: () => _shareQuestion(ref, question.id, question.prompt),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // The question, big.
+                Text(
+                  question.prompt,
+                  style: GoogleFonts.lora(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w700,
+                    height: 1.28,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                // Small gating hint.
+                Row(
+                  children: <Widget>[
+                    Icon(Icons.lock_outline_rounded,
+                        size: 14, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        "To see everyone else's answers, share one of your own.",
+                        style: GoogleFonts.inter(
+                          fontSize: 12.5,
+                          height: 1.4,
+                          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: state.isSubmitting ? null : () => _openComposerSheet(context, ref),
+                    icon: state.isSubmitting
+                        ? const SizedBox(
+                            width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.edit_rounded, size: 18),
+                    label: Text(state.isSubmitting ? 'Posting…' : 'Write your answer'),
+                    style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    'Tap anywhere to answer',
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        FilledButton.icon(
-          onPressed: submitting ? null : _submit,
-          icon: submitting
-              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Icons.send_rounded, size: 18),
-          label: Text(submitting ? 'Posting…' : 'Post my answer'),
-          style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "You'll see everyone else's answers once you share yours.",
-          textAlign: TextAlign.center,
-          style: GoogleFonts.inter(
-              fontSize: 12, color: colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
-        ),
-      ],
+      ),
     );
   }
 }
