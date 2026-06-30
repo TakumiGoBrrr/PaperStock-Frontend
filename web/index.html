@@ -195,12 +195,56 @@
       opacity: 1;
       transition: opacity 0.5s ease-out;
     }
+    .loading-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 24px;
+    }
+    .loading-spinner {
+      margin-top: 20px;
+      width: 26px;
+      height: 26px;
+      border: 2.5px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      opacity: 0.5;
+      animation: ps-spin 0.9s linear infinite;
+    }
+    @keyframes ps-spin { to { transform: rotate(360deg); } }
+    .loading-hint {
+      margin-top: 18px;
+      max-width: 280px;
+      text-align: center;
+      font: 400 13px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      letter-spacing: 0.1px;
+      line-height: 1.45;
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+    .loading-hint.show { opacity: 0.6; }
   </style>
 
-  <div id="loading">PaperStock</div>
+  <div id="loading">
+    <div class="loading-inner">
+      <div>PaperStock</div>
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <div id="loading-hint" class="loading-hint">
+        Setting things up. The first launch can take a moment, thanks for your patience.
+      </div>
+    </div>
+  </div>
 
   <script>
+    // Reveal the "first launch takes a moment" hint only if loading runs long,
+    // so fast / repeat loads never see it.
+    var psLoadingHintTimer = setTimeout(function () {
+      var hint = document.getElementById('loading-hint');
+      if (hint) hint.classList.add('show');
+    }, 2500);
+
     window.addEventListener('flutter-first-frame', function () {
+      clearTimeout(psLoadingHintTimer);
       var el = document.getElementById('loading');
       if (el) {
         el.style.pointerEvents = 'none';

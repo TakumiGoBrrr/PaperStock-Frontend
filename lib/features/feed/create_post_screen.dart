@@ -399,6 +399,13 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
       alpha: 0.05,
     );
 
+    // Give the body its own bounded, internally-scrolling viewport. An
+    // auto-growing (maxLines: null) field inside the outer SingleChildScrollView
+    // makes the whole page scroll when you tap to move the caret with the
+    // keyboard up, which makes precise cursor placement difficult.
+    final bodyHeight =
+        (MediaQuery.sizeOf(context).height * 0.32).clamp(200.0, 380.0);
+
     ref.listen(_createPostControllerProvider, (prev, next) {
       final prevNonce = prev?.uiMessageNonce ?? 0;
       if (next.uiMessageNonce == prevNonce) return;
@@ -523,28 +530,35 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                         ),
                       ],
                       const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _bodyController,
-                        style: TextStyle(color: colorScheme.onSurface),
-                        decoration: InputDecoration(
-                          labelText: 'Body',
-                          alignLabelWithHint: true,
-                          filled: true,
-                          fillColor: fieldFillColor,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                      SizedBox(
+                        height: bodyHeight,
+                        child: TextFormField(
+                          controller: _bodyController,
+                          style: TextStyle(color: colorScheme.onSurface),
+                          // expands + null lines = fills the box and scrolls
+                          // internally, so moving the caret doesn't scroll the page.
+                          expands: true,
+                          maxLines: null,
+                          minLines: null,
+                          textAlignVertical: TextAlignVertical.top,
+                          decoration: InputDecoration(
+                            labelText: 'Body',
+                            alignLabelWithHint: true,
+                            filled: true,
+                            fillColor: fieldFillColor,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                          validator: (value) {
+                            final v = (value ?? '').trim();
+                            if (v.isEmpty) return 'Body is required';
+                            return null;
+                          },
                         ),
-                        keyboardType: TextInputType.multiline,
-                        textInputAction: TextInputAction.newline,
-                        maxLines: null,
-                        minLines: 12,
-                        validator: (value) {
-                          final v = (value ?? '').trim();
-                          if (v.isEmpty) return 'Body is required';
-                          return null;
-                        },
                       ),
                       const SizedBox(height: 12),
                       Padding(
