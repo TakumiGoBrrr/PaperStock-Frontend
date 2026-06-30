@@ -35,8 +35,6 @@ class FeedScreen extends ConsumerStatefulWidget {
 }
 
 class _FeedScreenState extends ConsumerState<FeedScreen> {
-  int _previousIndex = 0;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -48,9 +46,6 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         ref.read(profileScrollToTopProvider.notifier).state++;
       }
       if (value == currentIndex) return;
-      setState(() {
-        _previousIndex = currentIndex;
-      });
       ref.read(bottomNavIndexProvider.notifier).state = value;
     }
 
@@ -74,11 +69,12 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
       ),
     ];
 
-    final isMovingRight = currentIndex > _previousIndex;
+    // A light fade-through (cross-fade + a subtle scale) - smoother and less
+    // busy than sliding two full screens past each other.
     final mainContent = AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      switchInCurve: Curves.easeInOutCubic,
-      switchOutCurve: Curves.easeInOutCubic,
+      duration: const Duration(milliseconds: 240),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
       layoutBuilder: (Widget? currentChild, List<Widget> previousChildren) {
         return Stack(
           alignment: Alignment.center,
@@ -89,23 +85,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
         );
       },
       transitionBuilder: (Widget child, Animation<double> animation) {
-        final currentKey = pages[currentIndex].key;
-        final isIncoming = child.key == currentKey;
-        
-        final double beginX;
-        if (isIncoming) {
-          beginX = isMovingRight ? 1.0 : -1.0;
-        } else {
-          beginX = isMovingRight ? -1.0 : 1.0;
-        }
-
-        return SlideTransition(
-          position: Tween<Offset>(
-            begin: Offset(beginX, 0.0),
-            end: Offset.zero,
-          ).animate(animation),
-          child: FadeTransition(
-            opacity: animation,
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.985, end: 1.0).animate(animation),
             child: child,
           ),
         );
