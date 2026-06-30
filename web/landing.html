@@ -581,6 +581,12 @@
 
     if (installBtn) {
       installBtn.addEventListener('click', async () => {
+        // Samsung Internet's WebAPK can be wrongly flagged by Play Protect - send
+        // these users to Chrome (the modal explains it) rather than the silent prompt.
+        if (/samsungbrowser/i.test(navigator.userAgent)) {
+          showInstallModal();
+          return;
+        }
         if (deferredPrompt) {
           // Trigger the browser's install prompt
           deferredPrompt.prompt();
@@ -624,8 +630,18 @@
                        !userAgent.includes('edgios') &&
                        !userAgent.includes('opios');
 
+      const isSamsung = /samsungbrowser/i.test(userAgent);
+
       let steps = [];
-      if (isIos) {
+      if (isSamsung) {
+        if (modalTitle) modalTitle.textContent = "Best installed in Chrome";
+        if (modalSubtitle) modalSubtitle.innerHTML = "Samsung Internet may show a <strong>Play Protect</strong> warning. It is safe, but for a clean install we recommend Chrome:";
+        steps = [
+          "Open <strong>paperstock.app</strong> in the <strong>Chrome</strong> app.",
+          "Tap the menu (three dots) and choose <strong>'Add to Home screen'</strong> / <strong>'Install app'</strong>.",
+          "Prefer to stay in Samsung Internet? Add it and tap <strong>'Install anyway'</strong> on the warning - it is safe."
+        ];
+      } else if (isIos) {
         if (isSafari) {
           if (modalTitle) modalTitle.textContent = "Install on iPhone";
           if (modalSubtitle) modalSubtitle.innerHTML = "Please use <strong>Safari</strong> to add the app to your home screen:";

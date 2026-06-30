@@ -90,6 +90,11 @@
           return 'other';
         } catch (e) { return 'other'; }
       };
+      // Samsung Internet mints a WebAPK that Play Protect can wrongly flag as
+      // "unsafe / older Android"; we nudge those users to Chrome.
+      window.__isSamsungInternet = function () {
+        try { return /samsungbrowser/i.test(window.navigator.userAgent); } catch (e) { return false; }
+      };
     })();
   </script>
   <style>
