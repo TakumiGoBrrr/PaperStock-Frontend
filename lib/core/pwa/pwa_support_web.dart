@@ -13,6 +13,9 @@ external void _promptInstall();
 @JS('__installPlatform')
 external String _installPlatform();
 
+@JS('__isSamsungInternet')
+external bool _isSamsungInternet();
+
 /// True when running as an installed PWA / home-screen web-clip ("app mode").
 bool pwaIsStandalone() {
   try {
@@ -45,6 +48,16 @@ String pwaInstallPlatform() {
     return _installPlatform();
   } catch (_) {
     return 'other';
+  }
+}
+
+/// True on Samsung Internet, whose WebAPK can be wrongly flagged by Play Protect;
+/// we steer those users to Chrome for a clean install.
+bool pwaIsSamsungInternet() {
+  try {
+    return _isSamsungInternet();
+  } catch (_) {
+    return false;
   }
 }
 

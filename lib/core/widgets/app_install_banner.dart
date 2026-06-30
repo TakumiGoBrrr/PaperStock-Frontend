@@ -18,6 +18,12 @@ class _AppInstallBannerState extends State<AppInstallBanner> {
   bool _dismissed = false;
 
   void _onInstall() {
+    // Samsung Internet mints a WebAPK that Play Protect sometimes wrongly flags
+    // as "unsafe / older Android" - steer these users to Chrome for a clean install.
+    if (pwaIsSamsungInternet()) {
+      _showInstallInstructions('samsung');
+      return;
+    }
     // Chrome / Edge / Android, when the browser exposes a prompt: one-tap install
     // (adds the PWA to the home screen, opens standalone like a native app).
     if (pwaCanInstall()) {
@@ -67,6 +73,17 @@ class _AppInstallBannerState extends State<AppInstallBanner> {
 
   (String, String, List<String>) _instructionsFor(String platform) {
     switch (platform) {
+      case 'samsung':
+        return (
+          'Best installed in Chrome',
+          'Samsung Internet may show a "Play Protect" warning when adding PaperStock. '
+              'It is safe, but for a clean install we recommend Chrome:',
+          <String>[
+            'Open paperstock.app in the Chrome app.',
+            "Tap the menu (three dots) and choose 'Add to Home screen' / 'Install app'.",
+            "Or, to stay in Samsung Internet, add it and tap 'Install anyway' on the warning - it is safe.",
+          ],
+        );
       case 'ios-safari':
         return (
           'Install on iPhone',
