@@ -13,6 +13,12 @@ external void _promptInstall();
 @JS('__installPlatform')
 external String _installPlatform();
 
+@JS('__isAndroid')
+external bool _isAndroid();
+
+@JS('__downloadAndroidApk')
+external void _downloadAndroidApk();
+
 /// True when running as an installed PWA / home-screen web-clip ("app mode").
 bool pwaIsStandalone() {
   try {
@@ -46,4 +52,20 @@ String pwaInstallPlatform() {
   } catch (_) {
     return 'other';
   }
+}
+
+/// True on Android browsers, where we hand out the native APK instead of a PWA.
+bool pwaIsAndroid() {
+  try {
+    return _isAndroid();
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Triggers a download of the signed Android APK.
+void pwaDownloadApk() {
+  try {
+    _downloadAndroidApk();
+  } catch (_) {}
 }

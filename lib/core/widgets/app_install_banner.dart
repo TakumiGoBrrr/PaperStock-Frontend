@@ -18,7 +18,12 @@ class _AppInstallBannerState extends State<AppInstallBanner> {
   bool _dismissed = false;
 
   void _onInstall() {
-    // Chrome / Edge / Android: fire the real native install prompt.
+    // Android: hand out the real signed APK instead of the PWA.
+    if (pwaIsAndroid()) {
+      pwaDownloadApk();
+      return;
+    }
+    // Chrome / Edge desktop: fire the real native PWA install prompt.
     if (pwaCanInstall()) {
       pwaPromptInstall();
       return;

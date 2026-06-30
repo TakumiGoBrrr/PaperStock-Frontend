@@ -74,6 +74,22 @@
         var p = window.__deferredPrompt;
         if (p) { p.prompt(); window.__deferredPrompt = null; }
       };
+      // Android gets the real native APK instead of the PWA.
+      window.__isAndroid = function () {
+        try { return /android/i.test(window.navigator.userAgent); } catch (e) { return false; }
+      };
+      window.__downloadAndroidApk = function () {
+        try {
+          var a = document.createElement('a');
+          a.href = 'https://paperstock.app/paperstock.apk';
+          a.setAttribute('download', 'paperstock.apk');
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        } catch (e) {
+          window.location.assign('https://paperstock.app/paperstock.apk');
+        }
+      };
       // Platform hint for the manual install instructions shown when the native
       // prompt isn't available (mirrors landing.html's install modal).
       window.__installPlatform = function () {
