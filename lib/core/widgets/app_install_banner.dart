@@ -18,18 +18,14 @@ class _AppInstallBannerState extends State<AppInstallBanner> {
   bool _dismissed = false;
 
   void _onInstall() {
-    // Android: hand out the real signed APK instead of the PWA.
-    if (pwaIsAndroid()) {
-      pwaDownloadApk();
-      return;
-    }
-    // Chrome / Edge desktop: fire the real native PWA install prompt.
+    // Chrome / Edge / Android, when the browser exposes a prompt: one-tap install
+    // (adds the PWA to the home screen, opens standalone like a native app).
     if (pwaCanInstall()) {
       pwaPromptInstall();
       return;
     }
-    // Otherwise (iOS Safari, or browsers that didn't expose a prompt) show the
-    // same platform-specific steps the landing page does.
+    // Otherwise (iOS Safari, or browsers without a prompt) show the platform's
+    // "Add to Home Screen" steps.
     _showInstallInstructions(pwaInstallPlatform());
   }
 
@@ -128,11 +124,11 @@ class _AppInstallBannerState extends State<AppInstallBanner> {
           padding: const EdgeInsets.fromLTRB(16, 8, 6, 8),
           child: Row(
             children: <Widget>[
-              Icon(Icons.download_rounded, size: 20, color: colorScheme.onPrimaryContainer),
+              Icon(Icons.add_to_home_screen_rounded, size: 20, color: colorScheme.onPrimaryContainer),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Get the PaperStock app',
+                  'Add PaperStock to your home screen',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -147,7 +143,7 @@ class _AppInstallBannerState extends State<AppInstallBanner> {
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 ),
-                child: const Text('Download'),
+                child: const Text('Install'),
               ),
               IconButton(
                 visualDensity: VisualDensity.compact,
