@@ -4,3 +4,5 @@ bool pwaIsStandalone() => true;
 bool pwaCanInstall() => false;
 void pwaPromptInstall() {}
 String pwaInstallPlatform() => 'other';
+bool pwaIsAndroid() => false;
+void pwaDownloadApk() {}

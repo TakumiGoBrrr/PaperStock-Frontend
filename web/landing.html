@@ -581,6 +581,16 @@
 
     if (installBtn) {
       installBtn.addEventListener('click', async () => {
+        // Android: download the real signed APK instead of the PWA.
+        if (/android/i.test(navigator.userAgent)) {
+          const a = document.createElement('a');
+          a.href = 'https://paperstock.app/paperstock.apk';
+          a.setAttribute('download', 'paperstock.apk');
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          return;
+        }
         if (deferredPrompt) {
           // Trigger the browser's install prompt
           deferredPrompt.prompt();
